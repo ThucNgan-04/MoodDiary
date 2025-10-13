@@ -74,7 +74,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // Lấy thông tin người dùng và cài đặt của họ
+    //-------------------------------------------//
     public function user(Request $request)
     {
         return response()->json([
@@ -83,7 +83,7 @@ class AuthController extends Controller
         ]);
     }
 
-    //  API đổi mật khẩu
+    //-------------------------------------------//
     public function changePassword(Request $request)
     {
         $request->validate([

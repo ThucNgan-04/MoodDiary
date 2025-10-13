@@ -88,7 +88,7 @@ class MoodController extends Controller
     }
 
     /**
-     * Lấy gợi ý theo emotion (random trong DB)
+     * Lấy gợi ý theo emotion 
      */
     public function getSuggestion($emotion)
     {

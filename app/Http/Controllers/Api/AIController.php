@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
 class AIController extends Controller
 {
@@ -41,7 +42,6 @@ class AIController extends Controller
                 ]
             );
 
-            // Nếu request fail (lỗi kết nối, 401, 500,…)
             if ($response->failed()) {
                 Log::error('Gemini API error', [
                     'status' => $response->status(),
