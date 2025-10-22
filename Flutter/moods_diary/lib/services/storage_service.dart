@@ -7,7 +7,6 @@ class StorageService {
   static const _secureKeyPrefix = 'secure_';
   final FlutterSecureStorage _secure = const FlutterSecureStorage();
 
-  // Singleton pattern (tuỳ ý)
   static final StorageService _instance = StorageService._internal();
   factory StorageService() => _instance;
   StorageService._internal();
@@ -28,7 +27,6 @@ class StorageService {
     await _secure.deleteAll();
   }
 
-  /// Migrate from SharedPreferences to secure storage (if SharedPreferences has token etc).
   Future<void> migrateFromPrefsIfNeeded(List<String> keysToMigrate) async {
     final prefs = await SharedPreferences.getInstance();
     for (final key in keysToMigrate) {
@@ -37,7 +35,6 @@ class StorageService {
       if (current != null && (secureVal == null || secureVal.isEmpty)) {
         try {
           await writeSecure(key, current);
-          // optional: remove old pref
           await prefs.remove(key);
           if (kDebugMode) debugPrint('[StorageService] Migrated $key -> secure storage');
         } catch (e) {
@@ -47,7 +44,6 @@ class StorageService {
     }
   }
 
-  /// Helper: read from secure first, fallback to SharedPreferences
   Future<String?> readSecureOrPrefs(String key) async {
     final s = await readSecure(key);
     if (s != null) return s;

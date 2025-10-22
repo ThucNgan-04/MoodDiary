@@ -1,20 +1,17 @@
 <?php
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MoodController;
-use App\Http\Controllers\Api\SuggestionController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\AIController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\StatsController;
 
-// Auth API (Các route công khai, không cần đăng nhập)
+// Auth API
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Các route yêu cầu xác thực (authenticated routes)
 Route::middleware('auth:api')->group(function(){
     // Route User
     Route::get('/user',[AuthController::class,'user']);
@@ -43,10 +40,6 @@ Route::middleware('auth:api')->group(function(){
     Route::post('/badges/save', [BadgeController::class, 'store']);
     Route::post('/badges/check', [BadgeController::class, 'checkBadges']);
     Route::get('/badges/{user_id}', [BadgeController::class, 'getUserBadges']);
-
-    // Route Suggestions
-    // Route::get('/suggestions/{mood_type}',[MoodController::class,'getSuggestion']);
-    // Route::apiResource('suggestions',SuggestionController::class);
 
     //test ai
     Route::post('/ai/analyze-stats', [AIController::class, 'analyzeStats']);

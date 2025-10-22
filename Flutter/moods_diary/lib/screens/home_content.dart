@@ -194,24 +194,37 @@ class _HomeScreenState extends State<HomeContent> {
                       ),
                       const SizedBox(height: 6),
                       
-                      TextField(
-                        controller: usernameController,
-                        readOnly: false,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 17,
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3), // Màu bóng
+                              spreadRadius: 1, // Độ lan rộng nhẹ
+                              blurRadius: 4, // Độ mờ
+                              offset: const Offset(0, 2), // Đổ bóng xuống dưới
+                            ),
+                          ],
                         ),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                        child: TextField(
+                          controller: usernameController,
+                          readOnly: false,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 17,
                           ),
-                          suffixIcon: IconButton(
-                            icon: Icon(Icons.save, color: selectedColor),
-                            tooltip: 'Lưu thay đổi',
-                            onPressed: _updateUsername,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white, // Nền trắng của TextField
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(Icons.save, color: selectedColor),
+                              tooltip: 'Lưu thay đổi',
+                              onPressed: _updateUsername,
+                            ),
                           ),
                         ),
                       ),
@@ -229,62 +242,105 @@ class _HomeScreenState extends State<HomeContent> {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      TextField(
-                        controller: emailController,
-                        readOnly: true,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 17,
+
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3), // Màu bóng
+                              spreadRadius: 1, // Độ lan rộng nhẹ
+                              blurRadius: 4, // Độ mờ
+                              offset: const Offset(0, 2), // Đổ bóng xuống dưới
+                            ),
+                          ],
                         ),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                        child:  TextField(
+                          controller: emailController,
+                          readOnly: true,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 17,
+                          ),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
 
                       // Nút đăng xuất
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _logout,
-                          icon: const Icon(Icons.logout, color: Colors.white),
-                          label: const AutoText("Đăng xuất",
-                              style: TextStyle(color: Colors.white)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.4), // Dùng màu chủ đạo để đổ bóng
+                              spreadRadius: 1,
+                              blurRadius: 6,
+                              offset: const Offset(0, 3), // Đổ bóng xuống dưới
+                            ),
+                          ],
+                        ),
+                        child:  SizedBox(
+                          height: 50,
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _logout,
+                            icon: const Icon(Icons.logout, color: Colors.white),
+                            label: const AutoText("Đăng xuất",
+                                style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 15),
                       // Nút đổi mật khẩu
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ChangePasswordScreen(),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.4), // Dùng màu chủ đạo để đổ bóng
+                              spreadRadius: 1,
+                              blurRadius: 6,
+                              offset: const Offset(0, 3), // Đổ bóng xuống dưới
                             ),
+                          ],
+                        ),
+                        child:  SizedBox(
+                          height: 50,
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ChangePasswordScreen(),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const AutoText(
+                              "Đổi mật khẩu",
+                              style: TextStyle(color: Colors.white), ),
                           ),
-                          child: const AutoText("Đổi mật khẩu",
-                              style: TextStyle(color: Colors.white)),
                         ),
                       ),
                       const SizedBox(height: 10),

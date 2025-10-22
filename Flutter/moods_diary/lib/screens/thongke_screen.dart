@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart'; // Cần cho PieChart/BarChart
+import 'package:fl_chart/fl_chart.dart'; 
 
 import '../widgets/user_sayhello.dart';
 import '../widgets/auto_text.dart';
@@ -21,7 +21,6 @@ class ThongKeScreen extends StatefulWidget {
 }
 
 class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProviderStateMixin {
-  // Thay đổi từ 'late' sang nullable và khởi tạo lại trong initState
   TabController? _tabController; 
   final MoodService _moodService = MoodService();
   
@@ -54,7 +53,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
 
   @override
   void dispose() {
-    _tabController?.dispose(); // Sử dụng ?. để đảm bảo an toàn
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -194,7 +193,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
     );
   }
 
-  // --- WIDGET NỘI DUNG TAB 1: CẢM XÚC THÁNG (Biểu đồ Tròn) ---
+  // --- CẢM XÚC THÁNG (Biểu đồ Tròn) ---
   Widget _buildEmotionStatTab(Color selectedColor) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -242,7 +241,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
                   },
                 ),
                 const SizedBox(height: 10),
-                // 2. Biểu đồ tròn
+                //Biểu đồ tròn
                 if (stats.isEmpty)
                   Container(
                     height: 200,
@@ -283,7 +282,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
           ),
           const SizedBox(height: 20),
 
-          // 3. Phần Thống kê chi tiết (Icon + %)
+          //Phần Thống kê chi tiết (Icon + %)
           AutoText(
             "THỐNG KÊ CẢM XÚC THÁNG ${selectedMonth.month}",
             textAlign: TextAlign.center,
@@ -345,7 +344,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
                   ),
                   child: AutoText(
                     aiSuggestion == "Đang phân tích..." ? "Đang phân tích..." : "Phân tích cảm xúc",
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -388,13 +387,12 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
     );
   }
 
-  //  LỆ CHUYỂN ĐỔI (Biểu đồ Đường) ---
+  // Tỷ LỆ CHUYỂN ĐỔI (Biểu đồ Đường) ---
   Widget _buildTrendChartTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Biểu đồ đường của bạn
           ThongKeUserStatChart(
             year: selectedMonth.year,
             month: selectedMonth.month,
@@ -416,8 +414,6 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     // Đảm bảo TabController đã sẵn sàng trước khi build các widget phụ thuộc
     if (_tabController == null) {
-      // Trong thực tế, điều này không nên xảy ra nếu TabController được khởi tạo 
-      // trong initState, nhưng là một biện pháp an toàn.
       return const Center(child: CircularProgressIndicator()); 
     }
 
@@ -432,14 +428,13 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
           backgroundColor: selectedColor.withOpacity(0.2),
           body: Column(
             children: [
-              // 1. Phần Chào hỏi người dùng
               const Padding(
                 padding: EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0),
                 child: UserSayHello(),
               ),
               const SizedBox(height: 10),
 
-              // 2. Tab Bar
+              // Tab Bar
               TabBar(
                 // Sử dụng toán tử ! vì đã kiểm tra null ở trên
                 controller: _tabController!, 
@@ -450,7 +445,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
                 indicatorColor: selectedColor,
               ),
               
-              // 3. Tab Bar View (Nội dung từng tab)
+              //Tab Bar View (Nội dung từng tab)
               Expanded(
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator())

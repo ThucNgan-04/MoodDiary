@@ -1,6 +1,4 @@
-// tạo các chủ đề giao diện, dựa trên SettingProvider
 // lib/utils/app_themes.dart
-
 import 'package:flutter/material.dart';
 import '../providers/setting_provider.dart';
 

@@ -81,7 +81,6 @@ class _UserSayHelloState extends State<UserSayHello> {
                 IconButton(
                   tooltip: "Xem huy hiệu cảm xúc",
                   onPressed: () async {
-                    // Khi bấm vào → chuyển sang BadgeScreen và tắt chấm đỏ
                     await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const BadgeScreen()),
@@ -89,18 +88,23 @@ class _UserSayHelloState extends State<UserSayHello> {
                   },
                   icon: Icon(
                     Icons.emoji_events,
-                    color: Colors.amber[700],
-                    size: 32,
+                    color: const Color.fromARGB(255, 255, 168, 18),
+                    size: 40,
+                    shadows: [
+                        Shadow(
+                          offset: const Offset(1.0, 2.0), // Đổ bóng nhẹ xuống dưới và sang phải
+                          blurRadius: 5.0,
+                          color: Colors.black.withOpacity(0.6),
+                        ),
+                    ],
                   ),
                 ),
               ],
             ),
           ],
         ),
-
         const SizedBox(height: 20),
 
-        // ===== Hàng chào người dùng =====
         Row(
           children: [
             CircleAvatar(
