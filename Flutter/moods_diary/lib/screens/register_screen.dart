@@ -203,6 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: AutoText(
                         'Đăng nhập ngay',
                         style: TextStyle(
+                          color: const Color.fromARGB(255, 19, 119, 201),
                           decoration: TextDecoration.underline,
                           fontWeight: FontWeight.bold,
                         ),

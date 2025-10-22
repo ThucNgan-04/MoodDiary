@@ -199,13 +199,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 children: [
                                   Image.asset(
                                     _getIconForEmotion(mood.emotion),
-                                    width: 16,
-                                    height: 16,
+                                    width: 25,
+                                    height: 25,
                                   ),
                                   const SizedBox(width: 8),
                                   AutoText(
-                                    "${mood.emotion} ",
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    "- ${mood.emotion} ",
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -227,7 +227,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         child: AutoText(
                                           mood.tag,
                                           style: const TextStyle(
-                                            fontSize: 16, 
+                                            fontSize: 13, 
                                             fontWeight: FontWeight.bold,
                                             color: Colors.white,
                                           ),

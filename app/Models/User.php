@@ -26,4 +26,10 @@ class User extends Authenticatable
     {
         return $this->hasOne(Setting::class);
     }
+
+    // 🏅 1 người dùng có nhiều huy hiệu
+    public function userBadges()
+    {
+        return $this->hasMany(Badge::class, 'user_id');
+    }
 }

@@ -38,7 +38,7 @@ class MoodModel {
       'emotion': emotion,
       'tag': tag,
       'note': note,
-      'date': createdAt.toIso8601String(), // gửi chuẩn ISO
+      'date': createdAt.toIso8601String(), 
     };
   }
 }

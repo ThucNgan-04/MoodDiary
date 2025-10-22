@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:moods_diary/providers/badge_provider.dart';
 import 'package:provider/provider.dart';
-import 'dart:io'; // ⬅️ THÊM DÒNG NÀY
+import 'dart:io'; 
 
 import 'providers/setting_provider.dart';
 import 'providers/translation_provider.dart';
@@ -14,8 +15,6 @@ import 'screens/thongke_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/splash_screen.dart';
 
-// ⬅️ THÊM LỚP GHI ĐÈ NÀY
-// CHỈ DÙNG KHI DEBUG/TEST ĐỂ KHẮC PHỤC LỖI SSL/TLS
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -27,7 +26,6 @@ class MyHttpOverrides extends HttpOverrides {
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // ⬅️ THÊM DÒNG NÀY ĐỂ ÁP DỤNG QUY TẮC BỎ QUA SSL
   HttpOverrides.global = MyHttpOverrides(); 
   
   runApp(
@@ -35,6 +33,8 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => SettingProvider()),
         ChangeNotifierProvider(create: (_) => TranslationProvider()),
+        ChangeNotifierProvider(create: (_) => BadgeProvider()),
+
       ],
       child: const MyApp(),
     ),

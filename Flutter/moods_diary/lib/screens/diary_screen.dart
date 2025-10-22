@@ -47,7 +47,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
   String selectedTag = "Gia đình";
   final TextEditingController _noteController = TextEditingController();
   final MoodService _moodService = MoodService();
-
   // --- AI Suggestion ---
   String? aiSuggestion;
   bool isLoading = false;
@@ -86,6 +85,8 @@ class _DiaryScreenState extends State<DiaryScreen> {
         "Lưu nhật ký cho ngày $formattedDate thành công!",
       );
 
+      final newBadge = response['new_badge'];
+      final aiSuggestionFromResponse = response['suggestion'];
       // Reset form nhập liệu
       setState(() {
         aiSuggestion = response['suggestion'];
@@ -93,18 +94,15 @@ class _DiaryScreenState extends State<DiaryScreen> {
         selectedEmotionIndex = null;
         _noteController.clear();
       });
-
-    } else {
+    }else {
       await showSnackBarAutoText(
-        context,
+          context,
         response?['message'] ?? 'Lỗi không xác định',
         isError: true,
       );
     }
-
     setState(() => isLoading = false);
   }
-
 
   @override
   void dispose() {
@@ -184,6 +182,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: emotions.length,
+                    // ignore: unnecessary_underscores
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, index) => GestureDetector(
                       onTap: () => setState(() => selectedEmotionIndex = index),
@@ -254,6 +253,8 @@ class _DiaryScreenState extends State<DiaryScreen> {
                             DropdownMenuItem(value: "Bạn bè", child: AutoText("Bạn bè")),
                             DropdownMenuItem(value: "Học tập", child: AutoText("Học tập")),
                             DropdownMenuItem(value: "Đời sống", child: AutoText("Đời sống")),
+                            DropdownMenuItem(value: "Tình yêu", child: AutoText("Tình yêu")),
+                            DropdownMenuItem(value: "Sức Khỏe/Tinh thần", child: AutoText("Sức Khỏe/Tinh thần")),
                           ],
                           onChanged: (value) => setState(() => selectedTag = value!),
                         ),

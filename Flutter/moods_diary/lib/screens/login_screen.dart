@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:moods_diary/utils/thongbao_snackbar.dart';
 import 'package:provider/provider.dart';
@@ -50,6 +52,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       if (result["success"] == true) {
         final user = result["user"];
+
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString(Constants.tokenKey, result["token"]);
+        prefs.setInt('user_id', user["id"]);
 
         // Gọi SettingProvider để tải cài đặt từ server
         final settingProvider = Provider.of<SettingProvider>(context, listen: false);

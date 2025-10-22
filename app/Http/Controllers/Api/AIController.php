@@ -42,6 +42,12 @@ class AIController extends Controller
                 ]
             );
 
+            if ($response->status() === 429) {
+                return response()->json([
+                    'suggestion' => 'AI đang tạm nghỉ để nạp năng lượng 😅. Hãy thử lại sau ít phút nhé!'
+                ], 200);
+            }
+
             if ($response->failed()) {
                 Log::error('Gemini API error', [
                     'status' => $response->status(),
@@ -60,7 +66,6 @@ class AIController extends Controller
                 return trim($text);
             }
 
-            // Nếu AI không trả lời thì log lại để debug
             Log::warning('Gemini trả về rỗng', ['result' => $result]);
 
             return "AI không trả lời được. Debug: " . json_encode($result, JSON_UNESCAPED_UNICODE);
@@ -94,7 +99,7 @@ class AIController extends Controller
         Đây là thống kê cảm xúc trong tháng của người dùng: " . json_encode($stats, JSON_UNESCAPED_UNICODE) . ".
         Hãy phân tích ngắn gọn (2-3 câu) về tình trạng cảm xúc của họ. 
         Nếu buồn/giận dữ chiếm nhiều, hãy khuyên cách cải thiện để tránh tiêu cực.
-        Nếu vui/hạnh phúc chiếm nhiều, hãy khuyến khích họ giữ vững tinh thần.
+        Nếu vui/hạnh phúc chiếm nhiều, hãy khuyến khích họ giữ vững tinh thần với giọng điệu cảm xúc này phấn chấn, vui vẻ dễ thương.
         Viết giọng thân thiện, dễ hiểu, như một người bạn quan tâm.";
 
         try {
@@ -118,6 +123,12 @@ class AIController extends Controller
                 ]
             );
 
+            if ($response->status() === 429) {
+                return response()->json([
+                    'suggestion' => 'AI đang tạm nghỉ để nạp năng lượng 😅. Hãy thử lại sau ít phút nhé!'
+                ], 200);
+            }
+
             if ($response->failed()) {
                 return response()->json([
                     'suggestion' => 'Không thể kết nối AI ngay lúc này.'
@@ -135,6 +146,78 @@ class AIController extends Controller
             return response()->json([
                 'suggestion' => 'Lỗi khi gọi AI: ' . $e->getMessage()
             ], 200);
+        }
+    }
+    
+    public function generateBadgeQuote(Request $request)
+    {
+        $apiKey = config('services.gemini.api_key');
+        
+        // Lấy dữ liệu cần thiết từ request
+        $badgeName = $request->input('badge_name');
+        $description = $request->input('description');
+
+        if (!$apiKey) {
+            return response()->json(['quote' => 'Chưa cấu hình GEMINI_API_KEY trong .env'], 500);
+        }
+
+        if (!$badgeName || !$description) {
+             return response()->json(['quote' => 'Thiếu thông tin huy hiệu để tạo quote.'], 400);
+        }
+
+        // Tạo prompt cho Gemini
+        $prompt = "Bạn là người tạo động lực. Người dùng vừa đạt huy hiệu '$badgeName' với thành tích '$description'.
+        Hãy tạo một câu nói truyền cảm hứng ngắn gọn (1 câu), sâu sắc và tích cực về thành tích này.
+        Tuyệt đối không thêm dấu ngoặc kép vào đầu và cuối câu. Chỉ trả về câu nói.";
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}",
+                [
+                    "contents" => [
+                        [
+                            "role" => "user",
+                            "parts" => [
+                                ["text" => $prompt]
+                            ]
+                        ]
+                    ],
+                    "generationConfig" => [
+                        "maxOutputTokens" => 50, // Chỉ cần một câu ngắn
+                        "temperature" => 0.8 // Nhiệt độ cao hơn để câu nói sáng tạo hơn
+                    ]
+                ]
+            );
+
+            if ($response->status() === 429) {
+                 return response()->json([
+                     'quote' => 'AI đang tạm nghỉ để nạp năng lượng 😅. Hãy thử lại sau ít phút nhé!'
+                 ], 200);
+            }
+
+            if ($response->failed()) {
+                Log::error('Gemini API error (Badge Quote)', [
+                    'status' => $response->status(),
+                    'body'   => $response->body()
+                ]);
+                return response()->json(['quote' => 'Không thể tạo quote AI lúc này.'], 500);
+            }
+
+            $result = $response->json();
+            $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
+
+            // Xóa dấu ngoặc kép và khoảng trắng thừa (do model có thể trả về)
+            return response()->json([
+                'quote' => trim($text, "\"\n\r\t ") ?: 'Tâm hồn bạn mạnh mẽ hơn bạn nghĩ, hãy tiếp tục chăm sóc nó!'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('AI Exception (Badge Quote)', [
+                'message' => $e->getMessage()
+            ]);
+            return response()->json(['quote' => 'Lỗi khi gọi AI: ' . $e->getMessage()], 500);
         }
     }
 }

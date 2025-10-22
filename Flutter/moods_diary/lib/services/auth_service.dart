@@ -34,6 +34,9 @@ class AuthService {
           user['email'],
           fullAvatarUrl,
         );
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('user_id', user['id']); // ✅ Lưu user_id để dùng cho huy hiệu
+
 
         return {  
           'success': true,
@@ -81,6 +84,10 @@ class AuthService {
           fullAvatarUrl,
         );
 
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('user_id', data['user']['id']); // ✅ lưu user_id
+
+
         if (kDebugMode) {
           debugPrint('>>> Toàn bộ dữ liệu login trả về: ${jsonEncode(data)}');
           debugPrint('>>> Dữ liệu user: ${jsonEncode(data['user'])}');
@@ -112,6 +119,10 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove(Constants.tokenKey);
         await prefs.remove(Constants.usernameKey);
+        await prefs.remove('cached_moods');
+        await prefs.remove('user_id');
+        await prefs.remove('cached_badges');
+        debugPrint('Đã xóa toàn bộ dữ liệu SharedPreferences khi logout');
         return true;
       }
       return false;

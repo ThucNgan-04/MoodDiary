@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:fl_chart/fl_chart.dart'; // Cần cho PieChart/BarChart
 
 import '../widgets/user_sayhello.dart';
 import '../widgets/auto_text.dart';
@@ -11,6 +11,7 @@ import '../models/mood_model.dart';
 
 // ignore: unused_import
 import '../utils/monthly_stat_cache.dart';
+import '../screens/thongke_user_screen.dart'; // ThongKeUserStatChart
 
 class ThongKeScreen extends StatefulWidget {
   const ThongKeScreen({super.key});
@@ -19,8 +20,11 @@ class ThongKeScreen extends StatefulWidget {
   State<ThongKeScreen> createState() => _ThongKeScreenState();
 }
 
-class _ThongKeScreenState extends State<ThongKeScreen> {
+class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProviderStateMixin {
+  // Thay đổi từ 'late' sang nullable và khởi tạo lại trong initState
+  TabController? _tabController; 
   final MoodService _moodService = MoodService();
+  
   bool isLoading = true;
   // ignore: unused_field
   List<MoodModel> _moods = [];
@@ -31,18 +35,32 @@ class _ThongKeScreenState extends State<ThongKeScreen> {
 
   String? aiSuggestion;
 
+  // Khai báo Tabs
+  final List<Tab> _tabs = [
+    const Tab(text: 'Cảm xúc tháng'),
+    const Tab(text: 'Tỷ lệ chuyển đổi'),
+  ];
+
   @override
   void initState() {
     super.initState();
+    // Khởi tạo TabController
+    _tabController = TabController(length: _tabs.length, vsync: this);
+    
     _generateMonths();
     if (months.isNotEmpty) selectedMonth = months[0];
-    // Không gọi AI khi khởi tạo
     _fetchMoods(shouldCallAI: false); 
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose(); // Sử dụng ?. để đảm bảo an toàn
+    super.dispose();
   }
 
   void _generateMonths() {
     final now = DateTime.now();
-    final List<DateTime> tmp = List.generate(6, (i) {
+    final List<DateTime> tmp = List.generate(12, (i) {
       final m = DateTime(now.year, now.month - i, 1);
       return DateTime(m.year, m.month, 1);
     });
@@ -58,7 +76,6 @@ class _ThongKeScreenState extends State<ThongKeScreen> {
     }
   }
 
-  // Sửa lỗi logic: Loại bỏ logic gọi AI bị lặp lại
   Future<void> _fetchMoods({bool shouldCallAI = true}) async {
     setState(() => isLoading = true);
 
@@ -67,7 +84,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> {
       m.createdAt.year == selectedMonth.year &&
       m.createdAt.month == selectedMonth.month
     ).toList();
-
+    if (!mounted) return;
     if (moodsThisMonth.isEmpty) {
       setState(() {
         _moods = [];
@@ -98,7 +115,6 @@ class _ThongKeScreenState extends State<ThongKeScreen> {
     // ignore: avoid_init_to_null
     String? suggestion = null;
 
-    // Chỉ gọi AI khi được yêu cầu (nhấn nút)
     if (shouldCallAI) {
       final statsMap = calculatedStats.map((s) => {"emotion": s.label, "value": s.value}).toList();
       suggestion = await _moodService.analyzeStats(statsMap);
@@ -107,17 +123,14 @@ class _ThongKeScreenState extends State<ThongKeScreen> {
     setState(() {
       _moods = moodsThisMonth;
       stats = calculatedStats;
-      aiSuggestion = suggestion; // Cập nhật suggestion (có thể là null)
+      aiSuggestion = suggestion; 
       isLoading = false;
     });
   }
 
-  // Logic gọi AI riêng biệt
   Future<void> _analyzeWithAI() async {
-    // THÊM: Kiểm tra nếu không có dữ liệu để phân tích
     if (stats.isEmpty) return; 
 
-    // Đặt trạng thái đang phân tích
     setState(() => aiSuggestion = "Đang phân tích..."); 
 
     final statsData = stats.map((e) => {
@@ -132,7 +145,6 @@ class _ThongKeScreenState extends State<ThongKeScreen> {
         aiSuggestion = suggestion;
       });
     } else {
-      // THÊM: Xử lý trường hợp AI không trả về kết quả
       setState(() {
         aiSuggestion = "Không thể phân tích dữ liệu lúc này.";
       });
@@ -171,239 +183,6 @@ class _ThongKeScreenState extends State<ThongKeScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<SettingProvider>(
-      builder: (context, provider, child) {
-        final settings = provider.settings;
-        final Color selectedColor = settings.colorTheme != null
-            ? Color(int.parse(settings.colorTheme!.replaceFirst('#', '0xff')))
-            : const Color(0xFFFFC0CB);
-
-        return Scaffold(
-          // ignore: deprecated_member_use
-          backgroundColor: selectedColor.withOpacity(0.2),
-          body: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const UserSayHello(),
-                      const SizedBox(height: 20),
-                      
-                      // Phần Biểu đồ
-                      Container(
-                        width: 600,
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [ BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5) ],
-                        ),
-                        child: Column(
-                          children: [
-                            const AutoText(
-                              "Biểu đồ cảm xúc Tháng",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 25,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            DropdownButton<DateTime>(
-                              value: selectedMonth,
-                              items: months.map((month) {
-                                return DropdownMenuItem<DateTime>(
-                                  value: month,
-                                  child: AutoText(
-                                    "${month.month}/${month.year}",
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 25,
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                if (value == null) return;
-                                setState(() {
-                                  selectedMonth = DateTime(value.year, value.month, 1);
-                                  isLoading = true;
-                                  aiSuggestion = null;
-                                });
-                                // KHÔNG gọi AI khi đổi tháng
-                                _fetchMoods(shouldCallAI: false); 
-                              },
-                            ),
-                            const SizedBox(height: 20),
-
-                            if (stats.isEmpty)
-                              Container(
-                                height: 220,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const AutoText(
-                                  "Chưa có dữ liệu cho tháng này",
-                                ),
-                              )
-                            else
-                              AspectRatio(
-                                aspectRatio: 1.3,
-                                child: PieChart(
-                                  PieChartData(
-                                    sectionsSpace: 2,
-                                    centerSpaceRadius: 0,
-                                    sections: stats.map((e) {
-                                      return PieChartSectionData(
-                                        color: e.color,
-                                        value: e.value,
-                                        title: "${e.value.toStringAsFixed(1)}%",
-                                        radius: 140,
-                                        titleStyle: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color: Colors.black,
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(height: 15),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      AutoText(
-                        "THỐNG KÊ CẢM XÚC THÁNG ${selectedMonth.month}",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      // Phần Thống kê chi tiết
-                      Container(
-                        width: 600,
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [ BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5) ],
-                        ),
-                        child: Column(
-                          children: [
-                            Wrap(
-                              spacing: 16,
-                              runSpacing: 12,
-                              alignment: WrapAlignment.center,
-                              children: stats.map((e) => _buildStatItem(e.icon, e.value)).toList(),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-
-                      // Phần Phân tích AI
-                      Center(
-                        child: Column(
-                          children: [
-                            AutoText(
-                              "MOODDIARY CÓ ĐÔI LỜI MUỐN GỬI ♥",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontStyle: FontStyle.italic,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                                shadows: [
-                                  // Viền trên
-                                  Shadow(offset: const Offset(0, -1.5), color: Colors.white), 
-                                  // Viền dưới
-                                  Shadow(offset: const Offset(0, 1.5), color: Colors.white), 
-                                  // Viền trái
-                                  Shadow(offset: const Offset(-1.5, 0), color: Colors.white), 
-                                  // Viền phải
-                                  Shadow(offset: const Offset(1.5, 0), color: Colors.white),
-                                  // Viền chéo (tùy chọn để làm viền dày hơn)
-                                  Shadow(offset: const Offset(2, 2), color: Colors.white),
-                                  Shadow(offset: const Offset(-2, -2), color: Colors.white),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-
-                            ElevatedButton(
-                              // Vô hiệu hóa nút nếu không có stats hoặc đang phân tích
-                              onPressed: stats.isEmpty || aiSuggestion == "Đang phân tích..." ? null : _analyzeWithAI,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: selectedColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: AutoText(
-                                aiSuggestion == "Đang phân tích..." ? "Đang phân tích..." : "Phân tích AI",
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                
-                              ),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // Hiển thị trạng thái/kết quả phân tích
-                            if (aiSuggestion == "Đang phân tích...")
-                              Center(child: CircularProgressIndicator(color: selectedColor,))
-                            else if (aiSuggestion != null)
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: selectedColor),
-                                ),
-                                child: AutoText(
-                                  aiSuggestion!,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontStyle: FontStyle.italic,
-                                    color: selectedColor.withOpacity(0.9),
-                                  ),
-                                ),
-                              )
-                            // Hướng dẫn người dùng bấm nút nếu có dữ liệu
-                            else if (stats.isNotEmpty)
-                              AutoText(
-                                "Nhấn 'Phân tích AI' để nhận gợi ý từ MoodDiary.",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontStyle: FontStyle.italic,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-
-                    ],
-                  ),
-                ),
-        );
-      },
-    );
-  }
-
   Widget _buildStatItem(String icon, double percent) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -412,6 +191,282 @@ class _ThongKeScreenState extends State<ThongKeScreen> {
         const SizedBox(height: 4),
         Text("${percent.toStringAsFixed(1)}%", style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
+    );
+  }
+
+  // --- WIDGET NỘI DUNG TAB 1: CẢM XÚC THÁNG (Biểu đồ Tròn) ---
+  Widget _buildEmotionStatTab(Color selectedColor) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 600,
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [ BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5) ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const AutoText(
+                  "Biểu đồ cảm xúc tháng",
+                  style: TextStyle(fontSize: 25, color: Colors.black, fontWeight: FontWeight.bold,),
+                ),
+                DropdownButton<DateTime>(
+                  value: selectedMonth,
+                  items: months.map((month) {
+                    return DropdownMenuItem<DateTime>(
+                      value: month,
+                      child: AutoText(
+                        "${month.month}/${month.year}",
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      selectedMonth = DateTime(value.year, value.month, 1);
+                      isLoading = true;
+                      aiSuggestion = null;
+                    });
+                    _fetchMoods(shouldCallAI: false); 
+                  },
+                ),
+                const SizedBox(height: 20),
+                // 2. Biểu đồ tròn
+                if (stats.isEmpty)
+                  Container(
+                    height: 220,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const AutoText(
+                          "Chưa có dữ liệu cho tháng này",
+                        ),
+                  )else
+                    AspectRatio(
+                      aspectRatio: 1.3,
+                      child: PieChart(
+                        PieChartData(
+                          sectionsSpace: 2,
+                          centerSpaceRadius: 0,
+                          sections: stats.map((e) {
+                            return PieChartSectionData(
+                              color: e.color,
+                              value: e.value,
+                              title: "${e.value.toStringAsFixed(1)}%",
+                              radius: 140,
+                              titleStyle: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Colors.black,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 3. Phần Thống kê chi tiết (Icon + %)
+          AutoText(
+            "THỐNG KÊ CẢM XÚC THÁNG ${selectedMonth.month}",
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 25,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            width: 600,
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [ BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5) ],
+            ),
+            child: Wrap(
+              spacing: 16,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: stats.map((e) => _buildStatItem(e.icon, e.value)).toList(),
+            ),
+          ),
+          const SizedBox(height: 30),
+          
+          // 4. Phần Phân tích AI
+          Center(
+            child: Column(
+              children: [
+                AutoText(
+                  "MOODDIARY CÓ ĐÔI LỜI MUỐN GỬI ♥",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                    shadows: [
+                      Shadow(offset: const Offset(0, -1.5), color: Colors.white), 
+                      Shadow(offset: const Offset(0, 1.5), color: Colors.white), 
+                      Shadow(offset: const Offset(-1.5, 0), color: Colors.white), 
+                      Shadow(offset: const Offset(1.5, 0), color: Colors.white),
+                      Shadow(offset: const Offset(2, 2), color: Colors.white),
+                      Shadow(offset: const Offset(-2, -2), color: Colors.white),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                ElevatedButton(
+                  onPressed: stats.isEmpty || aiSuggestion == "Đang phân tích..." ? null : _analyzeWithAI,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: selectedColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: AutoText(
+                    aiSuggestion == "Đang phân tích..." ? "Đang phân tích..." : "Phân tích AI",
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                if (aiSuggestion == "Đang phân tích...")
+                  Center(child: CircularProgressIndicator(color: selectedColor,))
+                else if (aiSuggestion != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: selectedColor),
+                    ),
+                    child: AutoText(
+                      aiSuggestion!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontStyle: FontStyle.italic,
+                        color: selectedColor.withOpacity(0.9),
+                      ),
+                    ),
+                  )
+                else if (stats.isNotEmpty)
+                  AutoText(
+                    "Nhấn 'Phân tích AI' để nhận gợi ý từ MoodDiary.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  //  LỆ CHUYỂN ĐỔI (Biểu đồ Đường) ---
+  Widget _buildTrendChartTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Biểu đồ đường của bạn
+          ThongKeUserStatChart(
+            year: selectedMonth.year,
+            month: selectedMonth.month,
+          ),
+          const SizedBox(height: 20),
+          const Center(
+            child: Text(
+              "Biểu đồ đường hiển thị xu hướng cảm xúc hàng ngày trong tháng.",
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Đảm bảo TabController đã sẵn sàng trước khi build các widget phụ thuộc
+    if (_tabController == null) {
+      // Trong thực tế, điều này không nên xảy ra nếu TabController được khởi tạo 
+      // trong initState, nhưng là một biện pháp an toàn.
+      return const Center(child: CircularProgressIndicator()); 
+    }
+
+    return Consumer<SettingProvider>(
+      builder: (context, provider, child) {
+        final settings = provider.settings;
+        final Color selectedColor = settings.colorTheme != null
+            ? Color(int.parse(settings.colorTheme!.replaceFirst('#', '0xff')))
+            : const Color(0xFFFFC0CB);
+
+        return Scaffold(
+          backgroundColor: selectedColor.withOpacity(0.2),
+          body: Column(
+            children: [
+              // 1. Phần Chào hỏi người dùng
+              const Padding(
+                padding: EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0),
+                child: UserSayHello(),
+              ),
+              const SizedBox(height: 10),
+
+              // 2. Tab Bar
+              TabBar(
+                // Sử dụng toán tử ! vì đã kiểm tra null ở trên
+                controller: _tabController!, 
+                tabs: _tabs,
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.grey,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorColor: selectedColor,
+              ),
+              
+              // 3. Tab Bar View (Nội dung từng tab)
+              Expanded(
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : TabBarView(
+                        // Sử dụng toán tử ! vì đã kiểm tra null ở trên
+                        controller: _tabController!, 
+                        children: [
+                          _buildEmotionStatTab(selectedColor),
+                          _buildTrendChartTab(),
+                        ],
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

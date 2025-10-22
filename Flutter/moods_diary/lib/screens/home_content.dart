@@ -52,6 +52,7 @@ class _HomeScreenState extends State<HomeContent> {
     final provider = Provider.of<SettingProvider>(context, listen: false);
     provider.setUsername(savedName);
     provider.setAvatar(savedAvatar);
+    
   }
 
   Color _hexToColor(String hexColor) {
@@ -171,7 +172,6 @@ class _HomeScreenState extends State<HomeContent> {
                     children: [
                       UserAvatar(
                         radius: 80,
-                        imageUrl: provider.avatarPath,
                         onTap: _chooseAvatar,
                       ),
                       const SizedBox(height: 8),
@@ -287,6 +287,7 @@ class _HomeScreenState extends State<HomeContent> {
                               style: TextStyle(color: Colors.white)),
                         ),
                       ),
+                      const SizedBox(height: 10),
                     ],
                   ),
                 ),

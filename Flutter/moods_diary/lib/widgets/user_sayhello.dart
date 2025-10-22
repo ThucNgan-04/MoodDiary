@@ -2,23 +2,28 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/setting_provider.dart';
+import '../screens/badge_screen.dart';
 import 'auto_text.dart';
 
-class UserSayHello extends StatelessWidget {
+class UserSayHello extends StatefulWidget {
   const UserSayHello({super.key});
+
+  @override
+  State<UserSayHello> createState() => _UserSayHelloState();
+}
+
+class _UserSayHelloState extends State<UserSayHello> {
 
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingProvider>();
     final username = context.watch<SettingProvider>().username ?? "Người dùng";
-    final avatarPath = settingsProvider.avatarPath; 
+    final avatarPath = settingsProvider.avatarPath;
     final Color primaryColor = Theme.of(context).colorScheme.primary;
 
     const defaultAssetImage = AssetImage('assets/images/avatar.png');
-
     ImageProvider avatarImage;
 
-    //phân biệt đường dẫn trong máy, mạng hoặc mặc định
     if (avatarPath == null || avatarPath.isEmpty) {
       avatarImage = defaultAssetImage;
     } else if (avatarPath.startsWith('http')) {
@@ -32,8 +37,9 @@ class UserSayHello extends StatelessWidget {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center, 
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Logo + tên app
             Row(
               children: [
                 Icon(Icons.cloud, color: primaryColor, size: 50),
@@ -44,29 +50,22 @@ class UserSayHello extends StatelessWidget {
                     Text(
                       "MOODDIARY",
                       style: TextStyle(
-                        fontSize: settingsProvider.getScaledFontSize(25), 
+                        fontSize: settingsProvider.getScaledFontSize(25),
                         fontWeight: FontWeight.bold,
                         color: primaryColor,
                         fontStyle: FontStyle.italic,
                         shadows: [
-                          // Viền trên
-                          Shadow(offset: const Offset(0, -1.5), color: Colors.white), 
-                          // Viền dưới
-                          Shadow(offset: const Offset(0, 1.5), color: Colors.white), 
-                          // Viền trái
-                          Shadow(offset: const Offset(-1.5, 0), color: Colors.white), 
-                          // Viền phải
+                          Shadow(offset: const Offset(0, -1.5), color: Colors.white),
+                          Shadow(offset: const Offset(0, 1.5), color: Colors.white),
+                          Shadow(offset: const Offset(-1.5, 0), color: Colors.white),
                           Shadow(offset: const Offset(1.5, 0), color: Colors.white),
-                          // Viền chéo (tùy chọn để làm viền dày hơn)
-                          Shadow(offset: const Offset(1, 1), color: Colors.white),
-                          Shadow(offset: const Offset(-1, -1), color: Colors.white),
                         ],
                       ),
                     ),
                     AutoText(
                       "Nhật ký cảm xúc",
                       style: TextStyle(
-                        fontSize: settingsProvider.getScaledFontSize(10), 
+                        fontSize: settingsProvider.getScaledFontSize(10),
                         color: const Color.fromARGB(102, 0, 0, 0),
                       ),
                     ),
@@ -74,10 +73,34 @@ class UserSayHello extends StatelessWidget {
                 ),
               ],
             ),
+
+            // ===== Icon huy hiệu góc phải + chấm đỏ =====
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  tooltip: "Xem huy hiệu cảm xúc",
+                  onPressed: () async {
+                    // Khi bấm vào → chuyển sang BadgeScreen và tắt chấm đỏ
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const BadgeScreen()),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.emoji_events,
+                    color: Colors.amber[700],
+                    size: 32,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
+
         const SizedBox(height: 20),
 
+        // ===== Hàng chào người dùng =====
         Row(
           children: [
             CircleAvatar(
@@ -87,17 +110,15 @@ class UserSayHello extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             AutoText(
-              "Xin Chào! $username",
+              "Xin chào, $username!",
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: primaryColor,
                     fontStyle: FontStyle.italic,
-                    fontSize: double.infinity
-              ),
+                  ),
             ),
-            const SizedBox(width: 6),
           ],
-        )
+        ),
       ],
     );
   }

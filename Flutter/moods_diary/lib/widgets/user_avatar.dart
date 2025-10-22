@@ -1,30 +1,40 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/setting_provider.dart';
 
 class UserAvatar extends StatelessWidget {
   final double radius;
-  final String? imageUrl;
   final VoidCallback? onTap;
 
   const UserAvatar({
     super.key,
     this.radius = 60,
-    this.imageUrl,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingProvider>();
+    final avatarPath = settingsProvider.avatarPath;
+    const defaultAssetImage = AssetImage('assets/images/avatar.png');
+
+    ImageProvider avatarImage;
+
+    if (avatarPath == null || avatarPath.isEmpty) {
+      avatarImage = defaultAssetImage;
+    } else if (avatarPath.startsWith('http')) {
+      avatarImage = NetworkImage(avatarPath);
+    } else {
+      avatarImage = FileImage(File(avatarPath));
+    }
+
     return GestureDetector(
-      onTap: onTap, 
+      onTap: onTap,
       child: CircleAvatar(
         radius: radius,
-        backgroundColor: Colors.blueAccent,
-        backgroundImage: imageUrl != null && imageUrl!.isNotEmpty
-            ? NetworkImage(imageUrl!)
-            : null,
-        child: imageUrl == null || imageUrl!.isEmpty
-            ? const Icon(Icons.person, size: 80, color: Colors.white)
-            : null,
+        backgroundImage: avatarImage,
+        backgroundColor: Colors.grey[200],
       ),
     );
   }

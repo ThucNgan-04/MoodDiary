@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\SuggestionController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\AIController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\BadgeController;
+use App\Http\Controllers\Api\StatsController;
 
 // Auth API (Các route công khai, không cần đăng nhập)
 Route::post('/register', [AuthController::class, 'register']);
@@ -33,11 +35,21 @@ Route::middleware('auth:api')->group(function(){
     Route::post('/moods',[MoodController::class,'store']);
     Route::put('/moods/{id}',[MoodController::class,'update']);
     Route::delete('/moods/{id}',[MoodController::class,'destroy']);
+    Route::get('/mood-monthly/{year}/{month}', [StatsController::class, 'Monthly']);
+    Route::get('/mood-daily-trend/{year}/{month}', [StatsController::class, 'dailyTrend']);
+
+    // Lấy tất cả huy hiệu của người dùng đang đăng nhập
+    Route::get('/badges/me', [BadgeController::class, 'me']);
+    Route::post('/badges/save', [BadgeController::class, 'store']);
+    Route::post('/badges/check', [BadgeController::class, 'checkBadges']);
+    Route::get('/badges/{user_id}', [BadgeController::class, 'getUserBadges']);
 
     // Route Suggestions
-    Route::get('/suggestions/{mood_type}',[MoodController::class,'getSuggestion']);
-    Route::apiResource('suggestions',SuggestionController::class);
+    // Route::get('/suggestions/{mood_type}',[MoodController::class,'getSuggestion']);
+    // Route::apiResource('suggestions',SuggestionController::class);
 
     //test ai
     Route::post('/ai/analyze-stats', [AIController::class, 'analyzeStats']);
+    Route::post('/ai/generate-badge-quote', [AIController::class, 'generateBadgeQuote']);
+    Route::get('/badges/streak-info', [BadgeController::class, 'getStreakInfo']);
 });

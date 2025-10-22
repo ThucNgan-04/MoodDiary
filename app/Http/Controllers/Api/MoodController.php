@@ -59,9 +59,19 @@ class MoodController extends Controller
             $request->note
         )?? 'Chưa có gợi ý, vui lòng thử lại sau.';
 
+        $badgeController = app(\App\Http\Controllers\Api\BadgeController::class);
+        $badgeResponse = $badgeController->checkBadges($request);
+        $badgeData = json_decode($badgeResponse->getContent(), true);
+
+        // 👇 Lấy huy hiệu mới nếu có
+        $newBadge = $badgeData['new_badge'] ?? null;
+
+        app(\App\Http\Controllers\Api\BadgeController::class)->checkBadges($request);
+
         return response()->json([
             'data'       => $mood,
             'suggestion' => $aiSuggestion,
+            'new_badge'  => $newBadge,
         ]);
     }
 

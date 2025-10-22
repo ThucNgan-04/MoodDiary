@@ -19,7 +19,7 @@ String _getContent(String key) {
   ♦♦ Điều khoản và Dịch vụ của MOODDIARY ♦♦
   (Cập nhật gần nhất: 01/10/2025)
 
-  Chào mừng bạn đến với MOODDIARY, được cung cấp bởi Nhóm 3 - Lập trình di động. Bằng việc cài đặt hoặc sử dụng Ứng dụng này, bạn đồng ý tuân thủ các Điều khoản và Dịch vụ sau:
+  Chào mừng bạn đến với MOODDIARY, được cung cấp bởi Nhóm 3 - MOODDIARY. Bằng việc cài đặt hoặc sử dụng Ứng dụng này, bạn đồng ý tuân thủ các Điều khoản và Dịch vụ sau:
 
   1. Chấp nhận Điều khoản
   Bằng cách truy cập hoặc sử dụng Ứng dụng, bạn xác nhận đã đọc, hiểu và đồng ý bị ràng buộc bởi các Điều khoản này.
@@ -27,11 +27,11 @@ String _getContent(String key) {
   2. Dịch vụ được Cung cấp
   MOODDIARY là ứng dụng nhật ký số giúp người dùng ghi lại, theo dõi và phân tích cảm xúc cá nhân.
   - Mục đích: Ứng dụng chỉ dùng cho mục đích theo dõi cảm xúc cá nhân và không phải là công cụ thay thế cho lời khuyên chuyên môn về sức khỏe tinh thần.
-  - Tính chính xác: [Tên Công ty] không đảm bảo tính chính xác hoặc hữu ích của bất kỳ phân tích nào được tạo ra.
+  - Tính chính xác: Nhóm 3 - MOODDIARY không đảm bảo tính chính xác hoặc hữu ích của bất kỳ phân tích nào được tạo ra.
 
   3. Quyền Sở hữu và Quyền Sử dụng
   - Quyền của bạn đối với Dữ liệu: Bạn hoàn toàn sở hữu và kiểm soát các mục nhật ký bạn nhập vào Ứng dụng.
-  - Quyền của chúng tôi: [Tên Công ty] sở hữu tất cả các quyền sở hữu trí tuệ đối với Ứng dụng, logo (MOODDIARY) và mã nguồn. Bạn được cấp quyền sử dụng Ứng dụng cho mục đích cá nhân, phi thương mại.
+  - Quyền của chúng tôi: Nhóm sở hữu tất cả các quyền sở hữu trí tuệ đối với Ứng dụng, logo (MOODDIARY) và mã nguồn. Bạn được cấp quyền sử dụng Ứng dụng cho mục đích cá nhân, phi thương mại.
 
   4. Hành vi bị Cấm
   - Bạn đồng ý không sử dụng Ứng dụng để đăng tải nội dung bất hợp pháp, sao chép hoặc bán lại Ứng dụng, hoặc cố gắng truy cập trái phép vào hệ thống.
