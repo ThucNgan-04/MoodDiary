@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:moods_diary/widgets/auto_text.dart';
 
 class DieukhoanScreen extends StatelessWidget {
   final String title;
@@ -79,7 +80,7 @@ String _getContent(String key) {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Dùng Text chuẩn vì đây là văn bản tĩnh, không cần AutoText phức tạp
-            Text(
+            AutoText(
               detailContent,
               style: Theme.of(context).textTheme.bodyLarge,
             ),

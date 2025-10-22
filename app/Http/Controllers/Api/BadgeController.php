@@ -23,13 +23,13 @@ class BadgeController extends Controller
         'TICH_CUC_KHO' => ['name' => 'Tinh Thần Lạc Quan ✨', 'description' => 'Duy trì tỷ lệ 80% log tích cực trong 30 ngày.'],
         'TICH_CUC_CHINH' => ['name' => 'Tâm hồn tích cực 🌈', 'description' => 'Chia sẻ cảm xúc tích cực thường xuyên (trên 60% tổng thể).'],
 
-        'COT_MOC_10' => ['name' => 'Người Ghi Chép Tập Sự', 'description' => 'Hoàn thành 10 lần ghi nhật ký đầu tiên.'],
-        'COT_MOC_100' => ['name' => 'Nhà Sử Học Cảm Xúc', 'description' => 'Hoàn thành 100 lần ghi nhật ký.'],
-        'VUOT_KHO_5' => ['name' => 'Bậc Thầy Vượt Khó 🏆', 'description' => 'Ghi nhận được sự cải thiện sau giai đoạn cảm xúc tiêu cực kéo dài.'],
+        'COT_MOC_10' => ['name' => 'Người Ghi Chép Tập Sự', 'description' => 'Hoàn thành 10 lần ghi nhật ký đầu tiên. Huy hiệu vĩnh viễn ♥'],
+        'COT_MOC_100' => ['name' => 'Nhà Sử Học Cảm Xúc', 'description' => 'Hoàn thành 100 lần ghi nhật ký. Huy hiệu vĩnh viễn ♥.'],
+        'VUOT_KHO_5' => ['name' => 'Bậc Thầy Vượt Khó 🏆', 'description' => 'Ghi nhận được sự cải thiện sau giai đoạn cảm xúc tiêu cực kéo dài. Huy hiệu vĩnh viễn ♥.'],
 
         'NHAT_KY_CHAM_CHI' => [
             'name' => 'Nhật Ký Chăm Chỉ ✍️',
-            'description' => 'Ghi lại 3 cảm xúc trong cùng một ngày.',
+            'description' => 'Ghi lại 3 cảm xúc trong cùng một ngày. Huy hiệu vĩnh viễn ♥.',
         ],
     ];
 
@@ -42,6 +42,7 @@ class BadgeController extends Controller
 
         // Kiểm tra huy hiệu streak mất hiệu lực
         $revoked = $this->revokeStreakBadges($user);
+        $revoked = array_merge($revoked ?? [], $this->revokeConditionBadges($user));
         // Kiểm tra huy hiệu mới
         $newBadge = $this->checkAllBadgeConditions($user);
 
@@ -154,24 +155,89 @@ class BadgeController extends Controller
 
     private function revokeStreakBadges($user)
     {
-        $yesterday = Carbon::yesterday()->toDateString();
-        $hasLog = Mood::where('user_id', $user->id)
+        // Lấy ngày hiện tại theo múi giờ VN
+        $today = Carbon::now('Asia/Ho_Chi_Minh')->toDateString();
+        $yesterday = Carbon::yesterday('Asia/Ho_Chi_Minh')->toDateString();
+
+        // Kiểm tra hôm qua có log không
+        $hadYesterdayLog = Mood::where('user_id', $user->id)
             ->whereDate('date', $yesterday)
             ->exists();
 
-        if ($hasLog) return null;
+        // Kiểm tra hôm nay có log không (để không xóa khi vừa log lại)
+        $hasTodayLog = Mood::where('user_id', $user->id)
+            ->whereDate('date', $today)
+            ->exists();
 
-        $revoked = Badge::where('user_id', $user->id)
-            ->whereIn('badge_name', [
-                self::BADGES['KIEN_TRI_3']['name'],
-                self::BADGES['KIEN_TRI_7']['name'],
-                self::BADGES['KIEN_TRI_30']['name']
-            ])
-            ->get();
+        // Nếu **hôm qua không có** và **hôm nay chưa log**, xóa streak
+        if (!$hadYesterdayLog && !$hasTodayLog) {
+            $revoked = Badge::where('user_id', $user->id)
+                ->whereIn('badge_name', [
+                    self::BADGES['KIEN_TRI_3']['name'],
+                    self::BADGES['KIEN_TRI_7']['name'],
+                    self::BADGES['KIEN_TRI_30']['name'],
+                ])
+                ->get();
 
-        foreach ($revoked as $badge) $badge->delete();
+            foreach ($revoked as $badge) {
+                $badge->delete();
+            }
 
-        return $revoked->pluck('badge_name')->toArray();
+            return $revoked->pluck('badge_name')->toArray();
+        }
+
+        return null;
+    }
+
+    //Ktra huy hiệu thời hạn
+    private function revokeConditionBadges($user)
+    {
+        $revoked = [];
+
+        $moods = Mood::where('user_id', $user->id)->get();
+        $totalLogs = $moods->count();
+        if ($totalLogs == 0) return [];
+
+        $positive = ['vui', 'hạnh phúc', 'tích cực', 'rất tích cực', 'đang yêu', 'happy'];
+        $positiveCount = $moods->filter(fn($m) => in_array(strtolower($m->emotion ?? ''), $positive))->count();
+        $ratio = $totalLogs ? $positiveCount / $totalLogs : 0;
+
+        // TICH_CUC_CHINH
+        if ($ratio < 0.6) {
+            $this->deleteBadge($user, self::BADGES['TICH_CUC_CHINH']['name'], $revoked);
+        }
+
+        // TICH_CUC_DE (7 ngày gần nhất)
+        $recent7 = $moods->where('created_at', '>=', Carbon::now()->subDays(7));
+        if ($recent7->count() >= 5) {
+            $ratio7 = $recent7->filter(fn($m) => in_array(strtolower($m->emotion ?? ''), $positive))->count() / $recent7->count();
+            if ($ratio7 < 0.7) {
+                $this->deleteBadge($user, self::BADGES['TICH_CUC_DE']['name'], $revoked);
+            }
+        }
+
+        // TICH_CUC_KHO (30 ngày gần nhất)
+        $recent30 = $moods->where('created_at', '>=', Carbon::now()->subDays(30));
+        if ($recent30->count() >= 10) {
+            $ratio30 = $recent30->filter(fn($m) => in_array(strtolower($m->emotion ?? ''), $positive))->count() / $recent30->count();
+            if ($ratio30 < 0.8) {
+                $this->deleteBadge($user, self::BADGES['TICH_CUC_KHO']['name'], $revoked);
+            }
+        }
+
+        return $revoked;
+    }
+
+    private function deleteBadge($user, $badgeName, &$revoked)
+    {
+        $badge = Badge::where('user_id', $user->id)
+            ->where('badge_name', $badgeName)
+            ->first();
+
+        if ($badge) {
+            $revoked[] = $badgeName;
+            $badge->delete();
+        }
     }
 
     // Trao huy hiệu và sinh quote từ AI
@@ -206,7 +272,7 @@ class BadgeController extends Controller
 
         try {
             $prompt = "Người dùng vừa đạt huy hiệu '{$badgeName}' với thành tích '{$description}'. 
-            Viết một câu nói truyền cảm hứng và tích cực, có thể dùng emotion hoặc câu thơ văn Việt Nam vào. 
+            Viết một câu không quá dài truyền sự cảm hứng và tích cực, có thể dùng emotion hoặc câu thơ đoạn văn hay vào. 
             Mỗi lần hãy viết một cách diễn đạt khác một chút để tạo cảm giác tự nhiên. Không sử dụng dấu ngoặc kép.";
 
             $response = Http::withHeaders(['Content-Type' => 'application/json'])

@@ -110,7 +110,7 @@ class _UserSayHelloState extends State<UserSayHello> {
             ),
             const SizedBox(width: 10),
             AutoText(
-              "Xin chào, $username!",
+              "Xin chào, $username !",
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: primaryColor,

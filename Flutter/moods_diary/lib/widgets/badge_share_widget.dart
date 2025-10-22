@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:moods_diary/widgets/auto_text.dart';
 
 class BadgeShareWidget extends StatelessWidget {
   final String name;
@@ -34,7 +35,7 @@ class BadgeShareWidget extends StatelessWidget {
         children: [
           Image.asset(logo, height: 150),
           const SizedBox(height: 30),
-          Text(
+          AutoText(
             '🥳 Tôi vừa đạt huy hiệu 💐',
             style: const TextStyle(
               color: Colors.white70,
@@ -43,7 +44,7 @@ class BadgeShareWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          AutoText(
             name,
             textAlign: TextAlign.center,
             style: const TextStyle(
@@ -59,7 +60,7 @@ class BadgeShareWidget extends StatelessWidget {
               color: Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(
+            child: AutoText(
               description,
               textAlign: TextAlign.center,
               style: const TextStyle(
@@ -69,7 +70,7 @@ class BadgeShareWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text(
+          AutoText(
             '🌞 “$aiQuote”',
             textAlign: TextAlign.center,
             style: const TextStyle(
@@ -80,7 +81,7 @@ class BadgeShareWidget extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          const Text(
+          const AutoText(
             '#MoodDiary #HuyHiệuCảmXúc',
             style: TextStyle(
               color: Colors.white70,

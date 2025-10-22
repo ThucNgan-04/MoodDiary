@@ -20,7 +20,21 @@ class ApiService {
 
       if (kDebugMode) {
         debugPrint('[API] $method $url');
-        if (data != null) debugPrint('[API] Payload: $data');
+        // Tạo bản sao của data để in log, KHÔNG in mật khẩu
+        Map<String, dynamic>? logData;
+        if (data != null){
+          logData = Map.from(data);
+            if (logData.containsKey('password')) {
+                logData['password'] = '***Bí mật nha!***'; // Ẩn mật khẩu
+            }
+            if (logData.containsKey('old_password')) {
+                logData['old_password'] = '***Xem bị ma bắt đấy!***';
+            }
+            if (logData.containsKey('new_password')) {
+                logData['new_password'] = '***Không xem được đâu à nha!***';
+            }
+        }
+        if(logData != null) debugPrint('[API] Payload: $logData');
       }
 
       http.Response response;
@@ -38,7 +52,14 @@ class ApiService {
 
       if (kDebugMode) {
         debugPrint('[API] Status: ${response.statusCode}');
-        debugPrint('[API] Response: $responseData');
+
+        //Ẩn Token khỏi Response log
+        Map<String, dynamic>? logResponse;
+        if (responseData.containsKey('token')) {
+            logResponse = Map.from(responseData);
+            logResponse['token'] = '***CENSORED_TOKEN***'; // Ẩn Token
+        }
+        debugPrint('[API] Response: ${logResponse ?? responseData}');
       }
 
       return {

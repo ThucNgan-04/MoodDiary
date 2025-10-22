@@ -51,6 +51,9 @@ dependencies:
   screenshot: ^3.0.0
   path_provider: ^2.1.4
 
+  #bảo mật mk + token
+  flutter_secure_storage: ^9.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

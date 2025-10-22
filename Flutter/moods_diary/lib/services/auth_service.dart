@@ -35,8 +35,7 @@ class AuthService {
           fullAvatarUrl,
         );
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('user_id', user['id']); // ✅ Lưu user_id để dùng cho huy hiệu
-
+        await prefs.setInt('user_id', user['id']); 
 
         return {  
           'success': true,
@@ -85,11 +84,10 @@ class AuthService {
         );
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('user_id', data['user']['id']); // ✅ lưu user_id
+        await prefs.setInt('user_id', data['user']['id']); // lưu user_id
 
 
         if (kDebugMode) {
-          debugPrint('>>> Toàn bộ dữ liệu login trả về: ${jsonEncode(data)}');
           debugPrint('>>> Dữ liệu user: ${jsonEncode(data['user'])}');
         }
 

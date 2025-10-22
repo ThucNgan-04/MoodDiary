@@ -40,6 +40,25 @@ class BadgeService {
 
           // Lưu danh sách huy hiệu mới vào provider
           badgeProvider.setNewBadges(List<Map<String, dynamic>>.from(newBadges));
+
+          // 🎉 Hiển thị chúc mừng huy hiệu mới
+          final firstBadge = newBadges.first;
+          final badgeName = firstBadge['badge_name'] ?? 'Huy hiệu mới';
+          showCelebrationPopup(context, badgeName);
+
+          // 🩷 Hiện thêm snackbar nhẹ nhàng ở dưới màn hình
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "🎉 Chúc mừng bạn đã đạt huy hiệu \"$badgeName\"! 🌈",
+                style: const TextStyle(fontSize: 16),
+              ),
+              backgroundColor: Colors.pinkAccent,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+
         }
 
         return List<Map<String, dynamic>>.from(newBadges);
@@ -150,3 +169,55 @@ class BadgeService {
     }
   }
 }
+void showCelebrationPopup(BuildContext context, String badgeName) {
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierColor: Colors.transparent,
+    builder: (context) => Center(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.pinkAccent.withOpacity(0.3),
+              blurRadius: 12,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "🎉 Chúc mừng bạn! 🌈",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.pinkAccent,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Bạn vừa đạt huy hiệu: $badgeName 🏆",
+              style: const TextStyle(
+                fontSize: 16,
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  // Tự đóng sau 3 giây
+  Future.delayed(const Duration(seconds: 3), () {
+    if (Navigator.canPop(context)) Navigator.pop(context);
+  });
+}
+

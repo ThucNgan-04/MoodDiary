@@ -241,11 +241,11 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
                     _fetchMoods(shouldCallAI: false); 
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 // 2. Biểu đồ tròn
                 if (stats.isEmpty)
                   Container(
-                    height: 220,
+                    height: 200,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
@@ -266,7 +266,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
                               color: e.color,
                               value: e.value,
                               title: "${e.value.toStringAsFixed(1)}%",
-                              radius: 140,
+                              radius: 130,
                               titleStyle: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -277,7 +277,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
               ],
             ),
           ),
@@ -311,7 +311,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
           ),
           const SizedBox(height: 30),
           
-          // 4. Phần Phân tích AI
+          // Phần Phân tích AI
           Center(
             child: Column(
               children: [
@@ -344,7 +344,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
                     ),
                   ),
                   child: AutoText(
-                    aiSuggestion == "Đang phân tích..." ? "Đang phân tích..." : "Phân tích AI",
+                    aiSuggestion == "Đang phân tích..." ? "Đang phân tích..." : "Phân tích cảm xúc",
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -372,7 +372,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
                   )
                 else if (stats.isNotEmpty)
                   AutoText(
-                    "Nhấn 'Phân tích AI' để nhận gợi ý từ MoodDiary.",
+                    "Nhấn 'Phân tích Cảm Xúc' để nhận gợi ý từ MoodDiary.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,

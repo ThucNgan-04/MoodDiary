@@ -9,7 +9,6 @@ import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../providers/badge_provider.dart';
-import '../services/badge_service.dart';
 import '../widgets/auto_text.dart';
 
 class BadgeScreen extends StatefulWidget {
@@ -20,55 +19,50 @@ class BadgeScreen extends StatefulWidget {
 }
 
 class _BadgeScreenState extends State<BadgeScreen> {
-  final BadgeService _badgeService = BadgeService();
-final ScreenshotController screenshotController = ScreenshotController();
-  List<Map<String, dynamic>> _badges = [];
-  bool _isLoading = true;
+  final ScreenshotController screenshotController = ScreenshotController();
+  late BadgeProvider _badgeProvider;
 
   @override
   void initState() {
     super.initState();
-    _loadBadges();
+    Future.microtask(() {
+      _badgeProvider = Provider.of<BadgeProvider>(context, listen: false);
+      _loadBadges();
+    });
   }
 
   Future<void> _loadBadges() async {
-    final badges = await _badgeService.getUserBadges(context);
-
+    await _badgeProvider.loadBadges(context);
     if (mounted) {
-      setState(() {
-        _badges = badges;
-        _isLoading = false;
-      });
-    }
-
-    if (mounted) {
-      Provider.of<BadgeProvider>(context, listen: false).clearBadgeNotification();
+      await _badgeProvider.clearBadgeNotification();
     }
   }
 
   Future<void> _shareBadge(Map<String, dynamic> badge) async {
-  final name = badge['badge_name'] ?? 'Huy hiệu bí ẩn';
-  final description = badge['description'] ?? 'Đã kiên trì ghi lại cảm xúc.';
-  final aiQuote = badge['ai_quote'] ?? 'Hãy tiếp tục hành trình chăm sóc tinh thần.';
+    final name = badge['badge_name'] ?? 'Huy hiệu bí ẩn';
+    final description = badge['description'] ?? 'Đã kiên trì ghi lại cảm xúc.';
+    final aiQuote =
+        badge['ai_quote'] ?? 'Hãy tiếp tục hành trình chăm sóc tinh thần.';
 
-  final image = await screenshotController.captureFromWidget(
-    BadgeShareWidget(
-      name: name,
-      description: description,
-      aiQuote: aiQuote,
-      backgroundImage: 'assets/images/share_bg.png', // ảnh nền
-      logo: 'assets/images/7day.png', // logo app
-    ),
-  );
+    final image = await screenshotController.captureFromWidget(
+      BadgeShareWidget(
+        name: name,
+        description: description,
+        aiQuote: aiQuote,
+        backgroundImage: 'assets/images/share_bg.png', // ảnh nền
+        logo: 'assets/images/7day.png', // logo app
+      ),
+    );
 
-  final directory = await getApplicationDocumentsDirectory();
-  final imagePath = File('${directory.path}/badge_share.png');
-  await imagePath.writeAsBytes(image);
+    final directory = await getApplicationDocumentsDirectory();
+    final imagePath = File('${directory.path}/badge_share.png');
+    await imagePath.writeAsBytes(image);
 
-  await Share.shareXFiles(
-    [XFile(imagePath.path)],
-    text: "🌞🌻 Tôi vừa đạt huy hiệu \"$name\" trên MoodDiary! 🏆🌟",
-  );}
+    await Share.shareXFiles(
+      [XFile(imagePath.path)],
+      text: "🌞🌻 Tôi vừa đạt huy hiệu \"$name\" trên MoodDiary! 🏆🌟",
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,21 +72,32 @@ final ScreenshotController screenshotController = ScreenshotController();
         centerTitle: true,
         backgroundColor: Colors.pink.shade100,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _badges.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _loadBadges,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _badges.length,
-                    itemBuilder: (context, index) {
-                      final badge = _badges[index];
-                      return _buildBadgeCard(context, badge);
-                    },
-                  ),
-                ),
+      body: Consumer<BadgeProvider>(
+        builder: (context, badgeProvider, _) {
+          final badges = badgeProvider.badges;
+          final isLoading = badgeProvider.isLoading;
+
+          if (isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (badges.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return RefreshIndicator(
+            onRefresh: _loadBadges,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: badges.length,
+              itemBuilder: (context, index) {
+                final badge = badges[index];
+                return _buildBadgeCard(context, badge);
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -114,7 +119,7 @@ final ScreenshotController screenshotController = ScreenshotController();
             AutoText(
               'Tiếp tục ghi nhật ký cảm xúc, bạn sẽ nhận được huy hiệu đầu tiên khi đạt cột mốc kiên trì!',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],
         ),
@@ -159,7 +164,10 @@ final ScreenshotController screenshotController = ScreenshotController();
                         ),
                         AutoText(
                           'Đạt ngày: $earnedDate',
-                          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       ],
                     ),
@@ -201,7 +209,8 @@ final ScreenshotController screenshotController = ScreenshotController();
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                 ),
               ),
@@ -213,7 +222,9 @@ final ScreenshotController screenshotController = ScreenshotController();
   }
 
   String _formatDate(dynamic dateString) {
-    if (dateString == null || dateString.toString().isEmpty) return 'Chưa xác định';
+    if (dateString == null || dateString.toString().isEmpty) {
+      return 'Chưa xác định';
+    }
     try {
       final date = DateTime.parse(dateString.toString()).toLocal();
       return DateFormat('dd/MM/yyyy').format(date);
