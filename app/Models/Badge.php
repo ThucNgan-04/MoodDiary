@@ -14,6 +14,7 @@ class Badge extends Model
         'badge_name',
         'description',
         'ai_quote',
+        'image_url',
         'earned_date',
     ];
 

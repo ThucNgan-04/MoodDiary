@@ -36,8 +36,8 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
 
   // Khai báo Tabs
   final List<Tab> _tabs = [
-    const Tab(text: 'Cảm xúc tháng'),
-    const Tab(text: 'Tỷ lệ chuyển đổi'),
+    const Tab(text: 'CẢM XÚC THÁNG'),
+    const Tab(text: 'TỶ LỆ CHUYỂN ĐỔI'),
   ];
 
   @override
@@ -387,7 +387,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
     );
   }
 
-  // Tỷ LỆ CHUYỂN ĐỔI (Biểu đồ Đường) ---
+  // Tỷ LỆ CHUYỂN ĐỔI (Biểu đồ Đường)
   Widget _buildTrendChartTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -399,9 +399,9 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
           ),
           const SizedBox(height: 20),
           const Center(
-            child: Text(
+            child: AutoText(
               "Biểu đồ đường hiển thị xu hướng cảm xúc hàng ngày trong tháng.",
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(color: Colors.grey),
               textAlign: TextAlign.center,
             ),
           ),

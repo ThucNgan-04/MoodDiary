@@ -1,26 +1,30 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
-import '../providers/badge_provider.dart';
-import '../utils/constants.dart';
 import 'package:flutter/material.dart';
+import '../utils/constants.dart';
+// Import hàm UI từ Utils
+import '../utils/badge_popup_utils.dart'; 
+
+// ignore: unused_import
+import 'package:provider/provider.dart';
+// ignore: unused_import
+import '../providers/badge_provider.dart';
 
 class BadgeService {
   final String baseUrl = Constants.apiUrl;
 
-  // Kiểm tra & cập nhật huy hiệu cho user hiện tại
-  Future<List<Map<String, dynamic>>> checkBadges(BuildContext context) async {
+  Future<Map<String, dynamic>> checkAndGetBadges(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(Constants.tokenKey);
+
+    if (token == null) {
+      debugPrint('[BadgeService] Không tìm thấy token.');
+      return {'badges': [], 'revoked_badge_names': [], 'new_badge': null};
+    }
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(Constants.tokenKey);
-
-      if (token == null) {
-        debugPrint('[BadgeService] Không tìm thấy token — có thể chưa đăng nhập.');
-        return [];
-      }
-
-      final response = await http.post(
+      final response = await http.get(
         Uri.parse('$baseUrl/badges/check'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -28,25 +32,28 @@ class BadgeService {
         },
       );
 
-      debugPrint('POST /badges/check => ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
+      debugPrint('GET /badges/check => ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List newBadges = data['new_badges'] ?? data['badges'] ?? [];
+        
+        final List<Map<String, dynamic>> badges = List<Map<String, dynamic>>.from(data['badges'] ?? []);
+        final List<String> revokedNames = List<String>.from(data['revoked_badge_names'] ?? []);
+        final newBadge = data['new_badge'] != null ? Map<String, dynamic>.from(data['new_badge']) : null;
+        
+        final processedBadges = badges.map((badge) {
+          badge['ai_quote'] ??= 'Bạn đã đạt được thành tựu đáng nhớ! ✨';
+          return badge;
+        }).toList();
 
-        if (newBadges.isNotEmpty) {
-          final badgeProvider = Provider.of<BadgeProvider>(context, listen: false);
+        // Xử lý hiển thị popup nếu API này trả về huy hiệu mới
+        if (newBadge != null) {
+          final badgeName = newBadge['badge_name'] ?? 'Huy hiệu mới';
+          final aiQuote = newBadge['ai_quote'] ?? 'Một thành tựu đáng nhớ!';
+          final imageUrl = newBadge['image_url'] ?? '';
 
-          // Lưu danh sách huy hiệu mới vào provider
-          badgeProvider.setNewBadges(List<Map<String, dynamic>>.from(newBadges));
-
-          // 🎉 Hiển thị chúc mừng huy hiệu mới
-          final firstBadge = newBadges.first;
-          final badgeName = firstBadge['badge_name'] ?? 'Huy hiệu mới';
-          showCelebrationPopup(context, badgeName);
-
-          // 🩷 Hiện thêm snackbar nhẹ nhàng ở dưới màn hình
+          showCelebrationPopup(context, badgeName, aiQuote, imageUrl); 
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -58,21 +65,49 @@ class BadgeService {
               duration: const Duration(seconds: 3),
             ),
           );
-
         }
 
-        return List<Map<String, dynamic>>.from(newBadges);
+        return {
+          'badges': processedBadges,
+          'revoked_badge_names': revokedNames,
+          'new_badge': newBadge,
+        };
+
       } else {
         debugPrint('Lỗi khi gọi /badges/check: ${response.body}');
-        return [];
+        throw Exception('Failed to check badges. Status: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('[BadgeService] Lỗi khi kiểm tra huy hiệu: $e');
-      return [];
+      throw Exception('Lỗi khi kiểm tra huy hiệu: $e');
     }
   }
 
-  //Lấy danh sách huy hiệu hiện tại của user
+  Future<bool> revokeBadge(String badgeName, BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(Constants.tokenKey);
+
+    if (token == null) return false;
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/badges/revoke'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({'badge_name': badgeName}),
+      );
+
+      debugPrint('POST /badges/revoke => ${response.statusCode}');
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('[BadgeService] Lỗi khi thu hồi huy hiệu $badgeName: $e');
+      return false;
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getUserBadges(BuildContext context) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -95,7 +130,6 @@ class BadgeService {
               List<Map<String, dynamic>>.from(data['badges']);
 
           return badges.map((badge) {
-            badge['icon'] = _getBadgeIcon(badge['badge_name']);
             badge['ai_quote'] ??= 'Bạn đã đạt được thành tựu đáng nhớ! ✨';
             return badge;
           }).toList();
@@ -110,7 +144,6 @@ class BadgeService {
     }
   }
 
-  // Lấy tiến trình chuỗi ngày (tùy backend)
   Future<Map<String, int>?> getStreakProgress() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -140,84 +173,4 @@ class BadgeService {
       return null;
     }
   }
-
-  String _getBadgeIcon(String? badgeName) {
-    final name = badgeName?.toLowerCase() ?? '';
-
-    if (name.contains('thử thách 3 ngày')) {
-      return '🥉';
-    } else if (name.contains('7 ngày')) {
-      return '🎖️';
-    } else if (name.contains('bền bỉ')) {
-      return '💪';
-    } else if (name.contains('tia nắng')) {
-      return '☀️';
-    } else if (name.contains('lạc quan')) {
-      return '🥳';
-    } else if (name.contains('tâm hồn tích cực')) {
-      return "🌻";
-    } else if (name.contains('ghi chép tập sự')) {
-      return '🎓';
-    } else if (name.contains('sử học cảm xúc')) {
-      return '🏆';
-    } else if (name.contains('vượt khó')) {
-      return '🔥';
-    } else if (name.contains('nhật ký chăm chỉ')) {
-      return '✍️';
-    } else {
-      return '👑';
-    }
-  }
 }
-void showCelebrationPopup(BuildContext context, String badgeName) {
-  showDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierColor: Colors.transparent,
-    builder: (context) => Center(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.pinkAccent.withOpacity(0.3),
-              blurRadius: 12,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "🎉 Chúc mừng bạn! 🌈",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.pinkAccent,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              "Bạn vừa đạt huy hiệu: $badgeName 🏆",
-              style: const TextStyle(
-                fontSize: 16,
-                fontStyle: FontStyle.italic,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-
-  // Tự đóng sau 3 giây
-  Future.delayed(const Duration(seconds: 3), () {
-    if (Navigator.canPop(context)) Navigator.pop(context);
-  });
-}
-

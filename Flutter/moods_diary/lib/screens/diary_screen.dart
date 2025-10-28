@@ -71,30 +71,32 @@ class _DiaryScreenState extends State<DiaryScreen> {
     final date = widget.selectedDate ?? DateTime.now();
     final formattedDate = DateFormat("yyyy-MM-dd HH:mm:ss").format(date);
 
-    // Lưu nhật ký vào DB
+    // LỖI Ở ĐÂY: Hàm saveMood mới yêu cầu BuildContext là đối số đầu tiên
     final response = await _moodService.saveMood(
+      context, // Đã thêm BuildContext vào đây!
       emotion!,
       selectedTag,
       note,
       date: formattedDate,
     );
 
-    if (response != null && response['data'] != null) {
+    if (response != null && response['success'] == true) { // Kiểm tra 'success' để đảm bảo thành công
       await showSnackBarAutoText(
         context,
         "Lưu nhật ký cho ngày $formattedDate thành công!",
       );
 
-      final newBadge = response['new_badge'];
+      // final newBadge = response['new_badge']; // Logic huy hiệu đã được chuyển vào MoodService
       final aiSuggestionFromResponse = response['suggestion'];
+      
       // Reset form nhập liệu
       setState(() {
-        aiSuggestion = response['suggestion'];
+        aiSuggestion = aiSuggestionFromResponse;
         selectedTag = "Gia đình";
         selectedEmotionIndex = null;
         _noteController.clear();
       });
-    }else {
+    } else {
       await showSnackBarAutoText(
           context,
         response?['message'] ?? 'Lỗi không xác định',
@@ -292,11 +294,13 @@ class _DiaryScreenState extends State<DiaryScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: _saveDiaryEntry,
-                    child: const AutoText(
-                      "Lưu nhật ký",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
+                    onPressed: isLoading ? null : _saveDiaryEntry,
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const AutoText(
+                            "Lưu nhật ký",
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 20),

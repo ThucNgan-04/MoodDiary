@@ -1,12 +1,15 @@
 import 'dart:convert';
-//import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart'; 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
 import '../models/mood_model.dart';
+// Import các hàm UI từ file Utils mới
+import '../utils/badge_popup_utils.dart'; 
 
 class MoodService {
-  Future<Map<String, dynamic>?> saveMood(String moodType, String tag, String note, {String? date,}) async {
+  // Thêm BuildContext vào saveMood để hiển thị popup/snackbar
+  Future<Map<String, dynamic>?> saveMood(BuildContext context, String moodType, String tag, String note, {String? date}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(Constants.tokenKey);
@@ -21,7 +24,7 @@ class MoodService {
         'note': note,
       };
 
-      if (date != null) body['date'] = date; // Gửi date 
+      if (date != null) body['date'] = date; 
 
       final response = await http.post(
         Uri.parse('${Constants.apiUrl}/moods'),
@@ -32,14 +35,23 @@ class MoodService {
         body: jsonEncode(body),
       );
 
-      // Debug log để kiểm tra dữ liệu trả về từ API
       print('[MoodService] Status: ${response.statusCode}');
       print('[MoodService] Body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
 
-        // suggestion có thể là String hoặc Map -> kiểm tra trước khi lấy
+        // --- Xử lý Huy hiệu mới ---
+        final newBadge = data['new_badge'];
+        if (newBadge != null) {
+          final badgeName = newBadge['badge_name'] ?? 'Huy hiệu mới';
+          final aiQuote = newBadge['ai_quote'] ?? 'Một thành tựu đáng nhớ!';
+          final imageUrl = newBadge['image_url'] ?? '';
+          //Hiển thị Popup chúc mừng
+          showCelebrationPopup(context, badgeName, aiQuote, imageUrl);
+        }
+
+        // Xử lý suggestion
         final suggestionData = data['suggestion'];
         String? suggestion;
         if (suggestionData is String) {
@@ -122,7 +134,6 @@ class MoodService {
     }
   }
 
-  //Lấy all các mood nhật ký để thke
   Future<List<MoodModel>> getAllMoods() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -158,7 +169,6 @@ class MoodService {
     }
   }
 
-  //AI thống kê
   Future<String?> analyzeStats(List<Map<String, dynamic>> stats) async {
     try {
       final prefs = await SharedPreferences.getInstance();

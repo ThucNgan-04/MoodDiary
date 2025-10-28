@@ -35,14 +35,17 @@ Route::middleware('auth:api')->group(function(){
     Route::get('/mood-monthly/{year}/{month}', [StatsController::class, 'Monthly']);
     Route::get('/mood-daily-trend/{year}/{month}', [StatsController::class, 'dailyTrend']);
 
-    // Lấy tất cả huy hiệu của người dùng đang đăng nhập
+    // Route huy hiệu
     Route::get('/badges/me', [BadgeController::class, 'me']);
     Route::post('/badges/save', [BadgeController::class, 'store']);
-    Route::post('/badges/check', [BadgeController::class, 'checkBadges']);
+    Route::get('/badges/check', [BadgeController::class, 'checkBadges']);
     Route::get('/badges/{user_id}', [BadgeController::class, 'getUserBadges']);
+    Route::post('badges/revoke', [BadgeController::class, 'revokeBadge']);
+    //AI huy note hh
+    Route::get('/badges/streak-info', [BadgeController::class, 'getStreakInfo']);
 
     //test ai
     Route::post('/ai/analyze-stats', [AIController::class, 'analyzeStats']);
     Route::post('/ai/generate-badge-quote', [AIController::class, 'generateBadgeQuote']);
-    Route::get('/badges/streak-info', [BadgeController::class, 'getStreakInfo']);
+    Route::post('/ai/mood-shift-analysis', [AIController::class, 'analyzeWeeklyMoodShift']);
 });

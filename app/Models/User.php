@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
+use App\Models\Badge;
 
 class User extends Authenticatable
 {
@@ -27,8 +28,8 @@ class User extends Authenticatable
         return $this->hasOne(Setting::class);
     }
 
-    // 🏅 1 người dùng có nhiều huy hiệu
-    public function userBadges()
+    //1 người dùng có nhiều huy hiệu
+    public function badges()
     {
         return $this->hasMany(Badge::class, 'user_id');
     }

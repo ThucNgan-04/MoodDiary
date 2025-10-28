@@ -82,7 +82,6 @@ class _HomeScreenState extends State<HomeContent> {
         Provider.of<SettingProvider>(context, listen: false)
             .setUsername(newUsername);
         setState(() => username = newUsername);
-
         await showSnackBarAutoText(
           context,
           "Cập nhật tên đăng nhập thành công!",

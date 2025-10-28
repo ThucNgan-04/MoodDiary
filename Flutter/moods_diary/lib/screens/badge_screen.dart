@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:intl/intl.dart';
+import 'package:moods_diary/screens/badge_note_screen.dart';
 import 'package:moods_diary/widgets/badge_share_widget.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -32,7 +33,10 @@ class _BadgeScreenState extends State<BadgeScreen> {
   }
 
   Future<void> _loadBadges() async {
+    // Logic trong provider sẽ tự động kiểm tra thu hồi và thông báo cho người dùng
     await _badgeProvider.loadBadges(context);
+    
+    // Xóa cờ thông báo sau khi người dùng vào màn hình này
     if (mounted) {
       await _badgeProvider.clearBadgeNotification();
     }
@@ -43,15 +47,21 @@ class _BadgeScreenState extends State<BadgeScreen> {
     final description = badge['description'] ?? 'Đã kiên trì ghi lại cảm xúc.';
     final aiQuote =
         badge['ai_quote'] ?? 'Hãy tiếp tục hành trình chăm sóc tinh thần.';
+    final imageUrl = badge['image_url'] ?? '';
 
     final image = await screenshotController.captureFromWidget(
-      BadgeShareWidget(
-        name: name,
-        description: description,
-        aiQuote: aiQuote,
-        backgroundImage: 'assets/images/share_bg.png', // ảnh nền
-        logo: 'assets/images/7day.png', // logo app
+      // Bọc Widget chia sẻ trong ScreenshotController
+      Material(
+        child: BadgeShareWidget(
+          name: name,
+          description: description,
+          aiQuote: aiQuote,
+          imageUrl: imageUrl, 
+          backgroundImage: 'assets/images/share_bg.png', 
+          logo: 'assets/images/7day.png', 
+        ),
       ),
+      delay: const Duration(milliseconds: 100), // Độ trễ để widget kịp render
     );
 
     final directory = await getApplicationDocumentsDirectory();
@@ -68,9 +78,22 @@ class _BadgeScreenState extends State<BadgeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const AutoText('Huy hiệu Cảm xúc 🏅'),
+        title: const AutoText('HUY HIỆU CẢM XÚC 🏅'),
         centerTitle: true,
         backgroundColor: Colors.pink.shade100,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Color.fromARGB(255, 232, 232, 232)), // Biểu tượng 'i'
+            onPressed: () {
+              // Điều hướng đến trang Note Huy Hiệu
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const BadgeNoteScreen(), // <--- Gọi màn hình đã gộp
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Consumer<BadgeProvider>(
         builder: (context, badgeProvider, _) {
@@ -128,8 +151,8 @@ class _BadgeScreenState extends State<BadgeScreen> {
   }
 
   Widget _buildBadgeCard(BuildContext context, Map<String, dynamic> badge) {
-    final icon = badge['icon'] ?? '🏆';
     final name = badge['badge_name'] ?? 'Huy hiệu không tên';
+    final imageUrl = badge['image_url'] ?? '';
     final description = badge['description'] ?? 'Đã đạt được thành tích đặc biệt.';
     final aiQuote = badge['ai_quote'] ?? 'Hãy tiếp tục hành trình chăm sóc tinh thần.';
     final earnedDate = _formatDate(badge['earned_date']);
@@ -148,7 +171,29 @@ class _BadgeScreenState extends State<BadgeScreen> {
             children: [
               Row(
                 children: [
-                  AutoText(icon, style: const TextStyle(fontSize: 36)),
+                  Container(
+                    width: 60, // Kích thước cố định cho ảnh
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.pink.shade200, width: 2),
+                    ),
+                    child: ClipOval(
+                      child: imageUrl.isNotEmpty 
+                        ? Image.network(
+                            imageUrl, 
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.stars, size: 30, color: Colors.amber), // Fallback
+                          )
+                        : const Icon(Icons.stars, size: 30, color: Colors.amber),
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

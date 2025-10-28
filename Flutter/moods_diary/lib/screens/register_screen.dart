@@ -52,9 +52,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       } else {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(content: AutoText(result["message"] ?? "Đăng ký thất bại.")),
-        // );
         await showSnackBarAutoText(
           context,
           result['message'] ?? "Đăng ký thất bại.",
@@ -63,9 +60,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(content: AutoText("Có lỗi xảy ra: $e")),
-      // );
       await showSnackBarAutoText(
         context,
         "Có lỗi xảy ra: $e",
@@ -145,6 +139,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (!emailRegex.hasMatch(value)) {
                       return 'Email không hợp lệ';
                     }
+                    if (!value.toLowerCase().endsWith('@gmail.com')){
+                      return 'Email phải dưới dạng @gmail.com';
+                    }
                     return null;
                   },
                 ),
@@ -192,8 +189,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 4, // Khoảng cách giữa hai phần tử
+                  runSpacing: 4, // Khoảng cách giữa các dòng
                   children: [
                     AutoText(
                       "Bạn đã có tài khoản? ",

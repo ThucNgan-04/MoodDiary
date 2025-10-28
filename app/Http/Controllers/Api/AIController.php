@@ -149,75 +149,87 @@ class AIController extends Controller
         }
     }
     
-    // public function generateBadgeQuote(Request $request)
-    // {
-    //     $apiKey = config('services.gemini.api_key');
+    public function analyzeWeeklyMoodShift(Request $request)
+    {
+        $apiKey = config('services.gemini.api_key');
         
-    //     // Lấy dữ liệu cần thiết từ request
-    //     $badgeName = $request->input('badge_name');
-    //     $description = $request->input('description');
+        // 1. Lấy dữ liệu thống kê từ request (đầu vào mới)
+        $currStats = $request->input('curr_stats'); // Ví dụ: {'pos': 5, 'neg': 1, 'neu': 1}
+        $prevStats = $request->input('prev_stats'); // Ví dụ: {'pos': 3, 'neg': 3, 'neu': 1}
+        $currDateRange = $request->input('curr_date_range');
+        $prevDateRange = $request->input('prev_date_range');
 
-    //     if (!$apiKey) {
-    //         return response()->json(['quote' => 'Chưa cấu hình GEMINI_API_KEY trong .env'], 500);
-    //     }
+        if (!$apiKey) {
+            return response()->json(['analysis' => 'Chưa cấu hình GEMINI_API_KEY trong .env.'], 500);
+        }
 
-    //     if (!$badgeName || !$description) {
-    //          return response()->json(['quote' => 'Thiếu thông tin huy hiệu để tạo quote.'], 400);
-    //     }
+        if (!$currStats || !$prevStats || !$currDateRange || !$prevDateRange) {
+            return response()->json(['analysis' => 'Thiếu dữ liệu thống kê tuần để phân tích.'], 400);
+        }
 
-    //     // Tạo prompt cho Gemini
-    //     $prompt = "Bạn là người tạo động lực. Người dùng vừa đạt huy hiệu '$badgeName' với thành tích '$description'.
-    //     Hãy tạo một câu nói truyền cảm hứng ngắn gọn (1 câu), sâu sắc và tích cực về thành tích này.
-    //     Tuyệt đối không thêm dấu ngoặc kép vào đầu và cuối câu. Chỉ trả về câu nói.";
+        // 2. Tạo PROMPT MỚI cho Gemini (Phân tích tự do, không theo form quote)
+        $currTotal = ($currStats['pos'] ?? 0) + ($currStats['neg'] ?? 0) + ($currStats['neu'] ?? 0);
+        $prevTotal = ($prevStats['pos'] ?? 0) + ($prevStats['neg'] ?? 0) + ($prevStats['neu'] ?? 0);
+        
+        $prompt = "
+        Phân tích sự dịch chuyển cảm xúc giữa Tuần trước ({$prevDateRange}) và Tuần này ({$currDateRange}).
+        - Tuần A: Tích cực {$prevStats['pos']} ngày, Tiêu cực {$prevStats['neg']} ngày, Trung tính/Chưa ghi {$prevStats['neu']} ngày (Tổng {$prevTotal} ngày ghi).
+        - Tuần B: Tích cực {$currStats['pos']} ngày, Tiêu cực {$currStats['neg']} ngày, Trung tính/Chưa ghi {$currStats['neu']} ngày (Tổng {$currTotal} ngày ghi).
 
-    //     try {
-    //         $response = Http::withHeaders([
-    //             'Content-Type' => 'application/json',
-    //         ])->post(
-    //             "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}",
-    //             [
-    //                 "contents" => [
-    //                     [
-    //                         "role" => "user",
-    //                         "parts" => [
-    //                             ["text" => $prompt]
-    //                         ]
-    //                     ]
-    //                 ],
-    //                 "generationConfig" => [
-    //                     "maxOutputTokens" => 50, // Chỉ cần một câu ngắn
-    //                     "temperature" => 0.8 // Nhiệt độ cao hơn để câu nói sáng tạo hơn
-    //                 ]
-    //             ]
-    //         );
+        Là một chuyên gia tâm lý, hãy đưa ra một đoạn nhận xét chuyên sâu (khoảng 3-4 câu, không quá 50 từ):
+        1. Nhận định xu hướng chung và sự dịch chuyển chính (Tích cực hay Tiêu cực đang chiếm ưu thế hơn và so với tuần trước).
+        2. Đưa ra một lời khuyên hoặc gợi ý hành động cụ thể và tích cực cho người dùng.
+        Tuyệt đối trả lời bằng tiếng Việt, không dùng dấu ngoặc kép. Chỉ trả về đoạn phân tích, không thêm lời chào, kết luận hay bất kỳ tiêu đề nào.
+        ";
 
-    //         if ($response->status() === 429) {
-    //              return response()->json([
-    //                  'quote' => 'AI đang tạm nghỉ để nạp năng lượng 😅. Hãy thử lại sau ít phút nhé!'
-    //              ], 200);
-    //         }
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}",
+                [
+                    "contents" => [
+                        [
+                            "role" => "user",
+                            "parts" => [
+                                ["text" => $prompt]
+                            ]
+                        ]
+                    ],
+                    "generationConfig" => [
+                        "maxOutputTokens" => 200, // Tăng token cho đoạn phân tích dài hơn 1 câu
+                        "temperature" => 0.7,      // Giảm nhiệt độ một chút để phân tích khách quan hơn
+                    ]
+                ]
+            );
 
-    //         if ($response->failed()) {
-    //             Log::error('Gemini API error (Badge Quote)', [
-    //                 'status' => $response->status(),
-    //                 'body'   => $response->body()
-    //             ]);
-    //             return response()->json(['quote' => 'Không thể tạo quote AI lúc này.'], 500);
-    //         }
+            if ($response->status() === 429) {
+                return response()->json([
+                    'analysis' => 'AI đang tạm nghỉ để nạp năng lượng 😅. Hãy thử lại sau ít phút nhé!'
+                ], 200);
+            }
 
-    //         $result = $response->json();
-    //         $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
+            if ($response->failed()) {
+                Log::error('Gemini API error (Mood Shift Analysis)', [
+                    'status' => $response->status(),
+                    'body'   => $response->body()
+                ]);
+                return response()->json(['analysis' => 'Không thể tạo phân tích AI lúc này. Vui lòng thử lại sau.'], 500);
+            }
 
-    //         // Xóa dấu ngoặc kép và khoảng trắng thừa (do model có thể trả về)
-    //         return response()->json([
-    //             'quote' => trim($text, "\"\n\r\t ") ?: 'Tâm hồn bạn mạnh mẽ hơn bạn nghĩ, hãy tiếp tục chăm sóc nó!'
-    //         ], 200);
+            $result = $response->json();
+            $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
-    //     } catch (\Exception $e) {
-    //         Log::error('AI Exception (Badge Quote)', [
-    //             'message' => $e->getMessage()
-    //         ]);
-    //         return response()->json(['quote' => 'Lỗi khi gọi AI: ' . $e->getMessage()], 500);
-    //     }
-    // }
+            // Xử lý và làm sạch văn bản
+            return response()->json([
+                'analysis' => trim($text, "\"\n\r\t ") ?: 'Tâm hồn bạn mạnh mẽ hơn bạn nghĩ, hãy tiếp tục chăm sóc nó!'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('AI Exception (Mood Shift Analysis)', [
+                'message' => $e->getMessage()
+            ]);
+            return response()->json(['analysis' => 'Lỗi khi gọi AI: ' . $e->getMessage()], 500);
+        }
+    }
 }

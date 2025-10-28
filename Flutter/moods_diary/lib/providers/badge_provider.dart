@@ -5,13 +5,13 @@ import '../services/badge_service.dart';
 
 class BadgeProvider with ChangeNotifier {
   bool _hasNewBadge = false;
-  bool _isLoading = false; // ✅ thêm để fix lỗi getter
+  bool _isLoading = false;
   List<Map<String, dynamic>> _newBadges = [];
   List<Map<String, dynamic>> _badges = [];
   final BadgeService _badgeService = BadgeService();
 
   bool get hasNewBadge => _hasNewBadge;
-  bool get isLoading => _isLoading; // ✅ getter mới
+  bool get isLoading => _isLoading;
   List<Map<String, dynamic>> get newBadges => _newBadges;
   List<Map<String, dynamic>> get badges => _badges;
 
@@ -34,18 +34,95 @@ class BadgeProvider with ChangeNotifier {
     await prefs.setBool('has_new_badge', false);
     notifyListeners();
   }
+// ------------------------------------
 
-  // ---- Quản lý danh sách huy hiệu ----
+  // HÀM MỚI: XÓA HUY HIỆU TRÊN SERVER VÀ CẬP NHẬT LOCAL
+  Future<void> _deleteBadgeOnServer(String badgeName, BuildContext context) async {
+    try {
+      final success = await _badgeService.revokeBadge(badgeName, context);
+      if (success) {
+        // Xóa khỏi danh sách local ngay lập tức
+        _badges.removeWhere((badge) => badge['badge_name'] == badgeName);
+        notifyListeners();
+        if (kDebugMode) {
+          print("✅ Đã xóa huy hiệu thu hồi: $badgeName");
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("❌ Lỗi xóa huy hiệu '$badgeName' trên server: $e");
+      }
+    }
+  }
+
+  // HÀM MỚI: HIỂN THỊ THÔNG BÁO THU HỒI
+  void _showRevokedBadgeAlert(BuildContext context, List<String> revokedNames) {
+    if (revokedNames.isEmpty) return;
+    
+    final message = 'Bạn đã mất huy hiệu sau:\n${revokedNames.join(', ')}\n\n'
+                    'Lý do: Không duy trì được điều kiện đạt huy hiệu. \n'
+                    '(Hãy bấm i để xem chi tiết đạt huy hiệu)';
+                    
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('🚨 Huy hiệu bị thu hồi!'),
+          content: Text(
+            message,
+            style: TextStyle(
+              fontSize: 16,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Đã hiểu', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                // GỌI API XÓA TỪNG HUY HIỆU SAU KHI CLICK OK
+                for (var name in revokedNames) {
+                  _deleteBadgeOnServer(name, context);
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  // ---- Quản lý danh sách huy hiệu (Sửa đổi) ----
   Future<void> loadBadges(BuildContext context) async {
+    if (_isLoading) return;
+    
     try {
       _isLoading = true;
       notifyListeners();
 
-      final badges = await _badgeService.getUserBadges(context);
-      _badges = badges ;
+      // Sử dụng hàm mới để kiểm tra và lấy huy hiệu
+      final result = await _badgeService.checkAndGetBadges(context);
+      
+      _badges = result['badges'] ?? [];
+      final List<String> revokedNames = List<String>.from(result['revoked_badge_names'] ?? []);
+      
+      //Xử lý huy hiệu mới (nếu có)
+      final newBadge = result['new_badge'];
+      if (newBadge != null) {
+        _newBadges = [Map<String, dynamic>.from(newBadge)];
+        await setHasNewBadge(true);
+      }
+      
+      if (revokedNames.isNotEmpty) {
+        // Sử dụng Future.microtask để đảm bảo Dialog được gọi sau khi build
+        // và danh sách huy hiệu đã được cập nhật (_badges đã chứa huy hiệu chờ xóa)
+        Future.microtask(() => _showRevokedBadgeAlert(context, revokedNames));
+      }
+
     } catch (e) {
       if (kDebugMode) {
-        print("❌ Lỗi load huy hiệu: $e");
+        print("❌ Lỗi load/check huy hiệu: $e");
       }
     } finally {
       _isLoading = false;
@@ -53,6 +130,7 @@ class BadgeProvider with ChangeNotifier {
     }
   }
 
+  // refreshBadges sẽ gọi lại loadBadges đã được cập nhật
   Future<void> refreshBadges(BuildContext context) async {
     await loadBadges(context);
   }
