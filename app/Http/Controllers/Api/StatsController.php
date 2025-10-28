@@ -88,4 +88,22 @@ class StatsController  extends Controller
 
         return response()->json($data);
     }
+
+    public function weeklyEntries($startDate, $endDate)
+    {
+        $userId = Auth::id();
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end   = Carbon::parse($endDate)->endOfDay();
+
+        // Lấy TẤT CẢ các bản ghi cảm xúc trong tuần, sắp xếp theo ngày
+        $entries = Mood::where('user_id', $userId)
+            ->whereBetween('date', [$start, $end])
+            // Chỉ cần lấy emotion và các trường cần thiết khác (nếu có)
+            ->select('emotion', 'date') 
+            ->orderBy('date', 'asc')
+            ->get();
+
+        // Laravel sẽ tự động chuyển đổi Collection này thành JSON Array
+        return response()->json($entries);
+    }
 }

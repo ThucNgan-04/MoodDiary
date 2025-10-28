@@ -34,6 +34,7 @@ Route::middleware('auth:api')->group(function(){
     Route::delete('/moods/{id}',[MoodController::class,'destroy']);
     Route::get('/mood-monthly/{year}/{month}', [StatsController::class, 'Monthly']);
     Route::get('/mood-daily-trend/{year}/{month}', [StatsController::class, 'dailyTrend']);
+    Route::get('/mood-all-entries/{startDate}/{endDate}', [StatsController::class, 'weeklyEntries']);   
 
     // Route huy hiệu
     Route::get('/badges/me', [BadgeController::class, 'me']);

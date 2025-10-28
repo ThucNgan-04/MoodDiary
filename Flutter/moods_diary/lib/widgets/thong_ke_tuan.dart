@@ -1,171 +1,97 @@
-// File: widgets/thong_ke_tuan.dart
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:moods_diary/utils/constants.dart';
 import 'package:moods_diary/widgets/auto_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/date_ultils.dart'; // Import để dùng WeeklyData
+// Giả định bạn có thể import WeeklyData từ utils/date_ultils.dart
+import '../utils/date_ultils.dart'; 
 
 // WIDGET 1: ThongKeWeeklySummary
 
 class ThongKeWeeklySummary extends StatelessWidget {
   final WeeklyData weeklyData;
-  final Map<String, dynamic> weekMoods; // {day: 'emotion'}
+  final Map<String, dynamic> weekMoods; // Dữ liệu đại diện (chỉ dùng cho tham khảo, không dùng cho so sánh)
+  final List<Map<String, dynamic>> allWeeklyMoodEntries; // TẤT CẢ bản ghi trong tuần HIỆN TẠI
+  
+  // DỮ LIỆU MỚI: TẤT CẢ bản ghi trong tuần TRƯỚC (Cần được tính toán và truyền từ ThongKeUserStatChart)
+  final List<Map<String, dynamic>> allPreviousWeeklyMoodEntries; 
+  
   final Function(String) isPositiveMood;
+  final int negToPosCount;
+  final int posToNegCount;
 
-  // để so sánh với tuần trước
+  // Dữ liệu cũ (Không cần thiết cho logic so sánh mới)
   final List<WeeklyData>? allWeeks;
-  final Map<int, Map<String, dynamic>>? allWeekMoods;
+  final Map<int, Map<String, dynamic>>? allWeekMoods; 
 
   const ThongKeWeeklySummary({
     super.key,
     required this.weeklyData,
     required this.weekMoods,
+    required this.allWeeklyMoodEntries, 
+    required this.allPreviousWeeklyMoodEntries, // THAM SỐ MỚI
     required this.isPositiveMood,
+    required this.negToPosCount,
+    required this.posToNegCount,
     this.allWeeks,
     this.allWeekMoods,
   });
 
-  // -------------------- PHÂN TÍCH TUẦN HIỆN TẠI --------------------
-  Map<String, int> _analyzeWeek() {
+  // Định nghĩa cảm xúc tiêu cực để sử dụng nhất quán
+  static const Set<String> negativeMoods = {'buồn', 'giận dữ'};
+
+  // -------------------- PHÂN TÍCH TẤT CẢ BẢN GHI TRONG TUẦN HIỆN TẠI --------------------
+  Map<String, int> _analyzeWeek({required List<Map<String, dynamic>> entries}) {
     int posCount = 0;
     int negCount = 0;
-    int neuCount = 0;
+    int neuCount = 0; // Là số LẦN GHI NHẬN cảm xúc TRUNG LẬP/KHÁC
+    int totalCount = entries.length; 
+    
+    for (final entry in entries) {
+      final emotionRaw = entry['emotion']; 
+      final String? emotion = emotionRaw is String ? emotionRaw.toLowerCase() : null;
 
-    for (int day in weeklyData.days) {
-      final emotion = weekMoods[day.toString()];
-      if (emotion != null && emotion is String) {
+      if (emotion != null ) {
         if (isPositiveMood(emotion)) {
           posCount++;
-        } else {
+        } else if (negativeMoods.contains(emotion)){ 
           negCount++;
-        }
-      } else {
-        neuCount++;
-      }
-    }
-
-    return {'pos': posCount, 'neg': negCount, 'neu': neuCount};
-  }
-
-  // -------------------- TÌM TUẦN TRƯỚC GẦN NHẤT CÓ DỮ LIỆU --------------------
-  WeeklyData? _findPreviousWeekWithData() {
-    if (allWeeks == null || allWeekMoods == null) return null;
-    final currentWeekNum = weeklyData.weekNumber;
-
-    for (int i = currentWeekNum - 1; i >= 1; i--) {
-      // find week object with weekNumber == i (if any)
-      final matches = allWeeks!.where((w) => w.weekNumber == i).toList();
-      if (matches.isEmpty) continue;
-      final prev = matches.first;
-
-      // get moods map for that week (may be null if key absent)
-      final Map<String, dynamic>? moods = allWeekMoods![i];
-      if (moods != null && moods.isNotEmpty) {
-        // at least one recorded day exists — return this previous week
-        return prev;
-      }
-    }
-    return null;
-  }
-
-  // -------------------- PHÂN TÍCH TUẦN CỤ THỂ (CHO TUẦN TRƯỚC) --------------------
-  Map<String, int> _analyzeCustomWeek(WeeklyData week, Map<String, dynamic> moods) {
-    int posCount = 0;
-    int negCount = 0;
-    int neuCount = 0;
-
-    for (int day in week.days) {
-      final emotion = moods[day.toString()];
-      if (emotion != null && emotion is String) {
-        if (isPositiveMood(emotion)) {
-          posCount++;
         } else {
-          negCount++;
+          neuCount++; 
         }
-      } else {
-        neuCount++;
       }
     }
-    return {'pos': posCount, 'neg': negCount, 'neu': neuCount};
+    final calculatedTotal = posCount + negCount + neuCount;
+    //debugPrint('DEBUG: Analyze Week (Entries) - Pos: $posCount, Neg: $negCount, Neu: $neuCount, Total: $calculatedTotal');
+    return {'pos': posCount, 'neg': negCount, 'neu': neuCount, 'totalEntries': totalCount};
   }
 
-  // -------------------- SO SÁNH 2 TUẦN --------------------
-  Map<String, int> _compareWithPreviousWeek(WeeklyData prevWeek) {
-    final prevMoods = allWeekMoods![prevWeek.weekNumber] ?? {};
-    final prevStats = _analyzeCustomWeek(prevWeek, prevMoods);
-    final currStats = _analyzeWeek();
+  // -------------------- CÁC HÀM SO SÁNH (DÙNG FULL ENTRIES) --------------------
+  
+  // Lấy kết quả phân tích tuần trước
+  Map<String, int> _analyzePreviousWeek() {
+      return _analyzeWeek(entries: allPreviousWeeklyMoodEntries);
+  }
 
+  Map<String, int> _compareWithPreviousWeek(Map<String, int> currStats, Map<String, int> prevStats) {
     return {
       'posDiff': currStats['pos']! - prevStats['pos']!,
       'negDiff': currStats['neg']! - prevStats['neg']!,
       'neuDiff': currStats['neu']! - prevStats['neu']!,
     };
   }
+  
+  // -------------------- CÁC HÀM XÂY DỰNG UI --------------------
 
-  // -------------------- TẠO NHẬN XÉT CHUYÊN SÂU (NO-AI) --------------------
-  /// Sinh đoạn nhận xét ngắn (dựa trên số tuyệt đối và phần trăm)
-  String _generateShiftAnalysis(Map<String, int> prevStats, Map<String, int> currStats) {
-    final prevTotal = (prevStats['pos'] ?? 0) + (prevStats['neg'] ?? 0) + (prevStats['neu'] ?? 0);
-    final currTotal = (currStats['pos'] ?? 0) + (currStats['neg'] ?? 0) + (currStats['neu'] ?? 0);
-
-    String safePercentChange(int prev, int curr) {
-      if (prev == 0) {
-        if (curr == 0) return "0%";
-        return "từ 0 lên ${((curr) * 100).toString()}% (không có dữ liệu trước đó)";
-      }
-      final change = ((curr - prev) / prev) * 100;
-      return "${change >= 0 ? '+' : ''}${change.toStringAsFixed(0)}%";
-    }
-
-    final posPrev = prevStats['pos'] ?? 0;
-    final negPrev = prevStats['neg'] ?? 0;
-    final neuPrev = prevStats['neu'] ?? 0;
-
-    final posCurr = currStats['pos'] ?? 0;
-    final negCurr = currStats['neg'] ?? 0;
-    final neuCurr = currStats['neu'] ?? 0;
-
-    final posChange = posCurr - posPrev;
-    final negChange = negCurr - negPrev;
-    final neuChange = neuCurr - neuPrev;
-
-    final posPct = safePercentChange(posPrev, posCurr);
-    final negPct = safePercentChange(negPrev, negCurr);
-    final neuPct = safePercentChange(neuPrev, neuCurr);
-
-    // Build readable summary
-    final buffer = StringBuffer();
-    buffer.writeln("🔎 Tóm tắt dịch chuyển cảm xúc so với tuần trước:");
-    buffer.writeln("- Tích cực: ${posChange >= 0 ? "tăng $posChange ngày" : "giảm ${posChange.abs()} ngày"} ($posPct).");
-    buffer.writeln("- Tiêu cực: ${negChange >= 0 ? "tăng $negChange ngày" : "giảm ${negChange.abs()} ngày"} ($negPct).");
-    buffer.writeln("- Trung tính/Chưa ghi: ${neuChange >= 0 ? "tăng $neuChange ngày" : "giảm ${neuChange.abs()} ngày"} ($neuPct).");
-
-    // Một số nhận xét bổ sung dựa trên xu hướng
-    // if (negChange < 0 && posChange > 0) {
-    //   buffer.writeln("\n🟢 Xu hướng tích cực: Số ngày tiêu cực giảm trong khi số ngày tích cực tăng — dấu hiệu phục hồi cảm xúc.");
-    // } else if (negChange > 0 && posChange < 0) {
-    //   buffer.writeln("\n🔴 Cần chú ý: Tăng ngày tiêu cực và giảm ngày tích cực — người dùng có thể trải qua tuần căng thẳng.");
-    // } else if (negChange == 0 && posChange == 0 && neuChange == 0) {
-    //   buffer.writeln("\n⚖️ Ổn định: Không thay đổi đáng kể giữa hai tuần.");
-    // } else {
-    //   buffer.writeln("\nℹ️ Có biến động nhẹ; cân nhắc xem xét nhật ký chi tiết để hiểu nguyên nhân cụ thể (công việc, giấc ngủ, tương tác...).");
-    // }
-    buffer.writeln("\nNhấn nút 'Nhận Phân Tích Chuyên Sâu Từ MOODDIARY' để có đánh giá tâm lý chuyên nghiệp.");
-    // Tối đa khoảng 4-6 câu — gọn và trực tiếp
-    return buffer.toString();
-  }
-
-  // -------------------- Ô HIỂN THỊ SO SÁNH --------------------
-  Widget _buildComparisonRow(String label, int diff) {
+  Widget _buildComparisonRow(String label, int diff, {String unit = 'lần'}) {
     String text;
     Color color;
     if (diff > 0) {
-      text = "Tăng $diff ngày";
+      text = "Tăng $diff $unit";
       color = Colors.green.shade600;
     } else if (diff < 0) {
-      text = "Giảm ${diff.abs()} ngày";
+      text = "Giảm ${diff.abs()} $unit";
       color = Colors.red.shade600;
     } else {
       text = "Không đổi";
@@ -184,7 +110,6 @@ class ThongKeWeeklySummary extends StatelessWidget {
     );
   }
 
-  // Hàm tạo ô tiêu đề
   Widget _buildHeaderCell(String text, {double flex = 1}) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
@@ -205,7 +130,6 @@ class ThongKeWeeklySummary extends StatelessWidget {
     );
   }
 
-  // Hàm tạo ô dữ liệu
   Widget _buildDataCell(String text, {Color? color, bool isBold = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 4.0),
@@ -225,7 +149,6 @@ class ThongKeWeeklySummary extends StatelessWidget {
     );
   }
 
-  // Hàm tạo thanh tiến trình
   Widget _buildMoodBar(String label, int count, int total, Color color) {
     double percent = total > 0 ? count / total : 0;
     return Padding(
@@ -234,7 +157,7 @@ class ThongKeWeeklySummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AutoText(
-            '$label: $count ngày (${(percent * 100).toStringAsFixed(0)}%)',
+            '$label: $count lần ghi nhận (${(percent * 100).toStringAsFixed(0)}%)', 
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: color),
           ),
           const SizedBox(height: 4),
@@ -252,24 +175,23 @@ class ThongKeWeeklySummary extends StatelessWidget {
   // -------------------- BUILD --------------------
   @override
   Widget build(BuildContext context) {
-    final analysis = _analyzeWeek();
-    final pos = analysis['pos']!;
-    final neg = analysis['neg']!;
-    final neu = analysis['neu']!;
-    final total = pos + neg + neu;
+    // Phân tích tuần hiện tại dùng TẤT CẢ bản ghi
+    final currStats = _analyzeWeek(entries: allWeeklyMoodEntries);
+    final pos = currStats['pos']!;
+    final neg = currStats['neg']!;
+    final neu = currStats['neu']!;
+    final total = currStats['totalEntries']!; // Tổng số BẢN GHI trong tuần
 
-    final prevWeek = _findPreviousWeekWithData();
-    final diff = prevWeek != null ? _compareWithPreviousWeek(prevWeek) : null;
-
-    // If previous week found, build previous stats for detailed analysis
-    Map<String, int>? prevStats;
-    String? deepAnalysis;
-    if (prevWeek != null && allWeekMoods != null) {
-      final prevMoods = allWeekMoods![prevWeek.weekNumber] ?? {};
-      prevStats = _analyzeCustomWeek(prevWeek, prevMoods);
-      deepAnalysis = _generateShiftAnalysis(prevStats, analysis);
+    // Phân tích tuần trước (DÙNG TẤT CẢ BẢN GHI)
+    final prevStats = _analyzePreviousWeek();
+    final prevTotal = prevStats['totalEntries']!;
+    
+    // SO SÁNH (DÙNG TẤT CẢ BẢN GHI)
+    Map<String, int>? diff;
+    if (prevTotal > 0) {
+      diff = _compareWithPreviousWeek(currStats, prevStats);
     }
-
+    
     return Container(
       width: 600,
       padding: const EdgeInsets.all(16),
@@ -291,6 +213,10 @@ class ThongKeWeeklySummary extends StatelessWidget {
               color: Color.fromARGB(255, 114, 53, 102),
             ),
           ),
+          AutoText(
+            "(Dựa trên $total lần ghi nhận)",
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          ),
           const Divider(height: 20, color: Colors.grey),
 
           // Bảng chi tiết
@@ -304,8 +230,8 @@ class ThongKeWeeklySummary extends StatelessWidget {
               // Hàng Tiêu đề
               TableRow(
                 children: [
-                  _buildHeaderCell("Trạng thái", flex: 1.5),
-                  _buildHeaderCell("Số ngày"),
+                  _buildHeaderCell("Tâm trạng", flex: 1.5),
+                  _buildHeaderCell("Số Emotion"),
                 ],
               ),
               // Hàng Dữ liệu Tích cực
@@ -322,17 +248,17 @@ class ThongKeWeeklySummary extends StatelessWidget {
                   _buildDataCell("$neg", color: Colors.red.shade600, isBold: true),
                 ],
               ),
-              // Hàng Dữ liệu Trung tính
+              // Hàng Dữ liệu Trung lập
               TableRow(
                 children: [
-                  _buildDataCell("Trung tính/Chưa ghi 😐", isBold: true),
+                  _buildDataCell("Ngày chưa ghi 😐", isBold: true), 
                   _buildDataCell("$neu", color: Colors.grey.shade600, isBold: true),
                 ],
               ),
               // Hàng Tổng cộng
               TableRow(
                 children: [
-                  _buildHeaderCell("TỔNG NGÀY", flex: 1.5),
+                  _buildHeaderCell("TỔNG EMOTION", flex: 1.5),
                   _buildHeaderCell("$total"),
                 ],
               ),
@@ -353,29 +279,38 @@ class ThongKeWeeklySummary extends StatelessWidget {
           // Thanh tiến trình
           _buildMoodBar("Tích cực", pos, total, Colors.green),
           _buildMoodBar("Tiêu cực", neg, total, Colors.red),
-          _buildMoodBar("Trung tính/Chưa ghi", neu, total, Colors.blueGrey),
+          _buildMoodBar("Ngày chưa ghi", neu, total, Colors.blueGrey),
 
-          if (prevWeek != null) ...[
+          // PHẦN SO SÁNH MỚI (DÙNG FULL ENTRIES)
+          if (prevTotal > 0 && diff != null) ...[
             const SizedBox(height: 24),
             AutoText(
-              "📊 So sánh với Tuần ${prevWeek.weekNumber} (${prevWeek.dateRange}):",
+              "So sánh (theo SỐ LẦN GHI NHẬN) với Tuần trước:",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.pink.shade800,
               ),
             ),
+            AutoText(
+               "(Tuần trước có $prevTotal lần ghi nhận)",
+               style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            ),
             const SizedBox(height: 8),
-            _buildComparisonRow("Tích cực 🌟", diff!['posDiff']!),
-            _buildComparisonRow("Tiêu cực ⚠️", diff['negDiff']!),
-            _buildComparisonRow("Trung tính 😐", diff['neuDiff']!),
+            _buildComparisonRow("Tích cực 🌟", diff['posDiff']!, unit: 'lần'),
+            _buildComparisonRow("Tiêu cực ⚠️", diff['negDiff']!, unit: 'lần'),
+            _buildComparisonRow("Khác 😐", diff['neuDiff']!, unit: 'lần'),
             const SizedBox(height: 20),
-            //PHÂN TÍCH AI
+            
+            // PHÂN TÍCH AI (Sử dụng thống kê theo LẦN GHI NHẬN)
             ThongKeWeeklyAIAnalysis(
-              currStats: analysis, // Dữ liệu tuần hiện tại
-              prevStats: prevStats!, // Dữ liệu tuần trước (đã kiểm tra null)
+              // Truyền kết quả phân tích theo LẦN GHI NHẬN
+              currStats: currStats, 
+              prevStats: prevStats, 
               currDateRange: weeklyData.dateRange,
-              prevDateRange: prevWeek.dateRange,
+              prevDateRange: allWeeks != null && weeklyData.weekNumber > 1 
+                  ? allWeeks!.firstWhere((w) => w.weekNumber == weeklyData.weekNumber - 1).dateRange
+                  : "Tuần trước", // Cố gắng tìm DateRange của tuần trước nếu có
             ),
           ],
         ],
@@ -384,6 +319,8 @@ class ThongKeWeeklySummary extends StatelessWidget {
   }
 }
 
+
+// WIDGET ThongKeWeeklyAIAnalysis (GIỮ NGUYÊN CODE LOGIC API, CHỈ ĐỔI TÊN BIẾN TRUYỀN VÀO)
 class ThongKeWeeklyAIAnalysis extends StatefulWidget {
   final Map<String, int> currStats; 
   final Map<String, int> prevStats;
@@ -405,11 +342,10 @@ class ThongKeWeeklyAIAnalysis extends StatefulWidget {
 class _ThongKeWeeklyAIAnalysisState extends State<ThongKeWeeklyAIAnalysis> {
   String aiAnalysis = "Bấm vào nút bên dưới để Mood Diary phân tích chuyên sâu.";
   bool isLoading = false;
-  // Giả định API endpoint mới
   final String apiEndpoint = "${Constants.baseUrl}/ai/mood-shift-analysis"; 
   final String tokenKey = Constants.tokenKey;
 
-  // Hàm gọi API đến Server Laravel
+  // Hàm gọi API đến Server Laravel (_fetchAIAnalysis giữ nguyên)
   Future<void> _fetchAIAnalysis() async {
     if (isLoading) return;
     setState(() {
@@ -419,17 +355,15 @@ class _ThongKeWeeklyAIAnalysisState extends State<ThongKeWeeklyAIAnalysis> {
     
     // Chuẩn bị payload
     final payload = {
-      'curr_stats': widget.currStats,
+      'curr_stats': widget.currStats, 
       'prev_stats': widget.prevStats,
       'curr_date_range': widget.currDateRange,
       'prev_date_range': widget.prevDateRange,
     };
-    debugPrint('DEBUG AI WEEKLY PAYLOAD: ${json.encode(payload)}');
     
     // Lấy token
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString(tokenKey);
-    debugPrint('DEBUG: Token Flutter: $token');
 
     if (token == null) {
         setState(() {
@@ -451,25 +385,21 @@ class _ThongKeWeeklyAIAnalysisState extends State<ThongKeWeeklyAIAnalysis> {
         
         final data = json.decode(utf8.decode(response.bodyBytes));
         
-        // Kiểm tra lỗi 429 hoặc lỗi chung
         if (response.statusCode == 429) {
              setState(() {
-                aiAnalysis = data['analysis'] ?? 'AI đang tạm nghỉ để nạp năng lượng 😅. Hãy thử lại sau ít phút nhé!';
-            });
+                 aiAnalysis = data['analysis'] ?? 'AI đang tạm nghỉ để nạp năng lượng 😅. Hãy thử lại sau ít phút nhé!';
+             });
         } else if (response.statusCode != 200) {
-            // Lỗi Server/Lỗi API Gemini từ Server
              setState(() {
-                aiAnalysis = data['analysis'] ?? "Lỗi server ${response.statusCode}. Không thể phân tích AI.";
-            });
+                 aiAnalysis = data['analysis'] ?? "Lỗi server ${response.statusCode}. Không thể phân tích AI.";
+             });
         } else {
-            // Thành công
-            final resultAnalysis = data['analysis'] ?? "Phân tích AI thất bại, nhưng bạn đang làm rất tốt!";
-            setState(() {
-                aiAnalysis = resultAnalysis;
-            });
+             final resultAnalysis = data['analysis'] ?? "Phân tích AI thất bại, nhưng bạn đang làm rất tốt!";
+             setState(() {
+                 aiAnalysis = resultAnalysis;
+             });
         }
     } catch (e) {
-        // Lỗi mạng hoặc exception
         setState(() {
             aiAnalysis = "Lỗi mạng hoặc kết nối. Hãy thử lại.";
         });

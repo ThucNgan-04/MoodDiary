@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:moods_diary/widgets/auto_text.dart';
-import 'package:moods_diary/utils/date_ultils.dart'; // Import tiện ích ngày tháng mới
+import 'package:moods_diary/utils/date_ultils.dart'; 
 import 'package:moods_diary/widgets/thong_ke_tuan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../utils/constants.dart';
+// ignore: depend_on_referenced_packages
+import 'package:collection/collection.dart';
 
 class ThongKeUserStatChart extends StatefulWidget {
   final int year;
@@ -21,10 +23,38 @@ class _ThongKeUserStatChartState extends State<ThongKeUserStatChart> {
   bool isLoading = true;
   Map<String, dynamic> currentMonthTrendData = {}; // Dữ liệu tháng hiện tại
 
+  List<Map<String, dynamic>> allMonthMoodEntries = [];
   // Logic theo tuần
   List<WeeklyData> weeks = [];
   WeeklyData? selectedWeek;
   Map<String, dynamic> selectedWeekMoods = {}; // Dữ liệu cảm xúc chỉ trong tuần được chọn
+  List<Map<String, dynamic>> selectedWeekAllEntries = [];
+  
+  List<Map<String, dynamic>> _filterEntriesByWeek(WeeklyData week) {
+    // Nếu không có dữ liệu tháng, trả về danh sách rỗng
+    if (allMonthMoodEntries.isEmpty) return []; 
+    
+    // Dùng DateTime của Tuần (dates) để so sánh với ngày trong bản ghi (entry['date'])
+    final weekStartDay = week.dates.first.day;
+    final weekEndDay = week.dates.last.day;
+
+    return allMonthMoodEntries.where((entry) {
+      final dateRaw = entry['date'];
+      if (dateRaw is String) {
+        try {
+          final entryDateTime = DateTime.parse(dateRaw).toLocal(); 
+          final entryDay = entryDateTime.day;
+          
+          // Chỉ lấy các bản ghi có ngày nằm trong phạm vi của tuần này
+          return entryDay >= weekStartDay && entryDay <= weekEndDay;
+        } catch (e) {
+          debugPrint('Error parsing date during filtering: $e');
+          return false;
+        }
+      }
+      return false;
+    }).toList();
+  }
 
   // Dữ liệu cho phân tích chuyển đổi trong tuần
   int negToPosCount = 0;
@@ -47,44 +77,120 @@ class _ThongKeUserStatChartState extends State<ThongKeUserStatChart> {
   
   // Hàm khởi tạo dữ liệu
   void _initializeData() {
-    weeks = getWeeksInMonth(widget.year, widget.month);
-    selectedWeek = weeks.isNotEmpty ? weeks.first : null;
-    fetchTrend().then((_) {
+    setState(() {
+      isLoading = true;
+      weeks = getWeeksInMonth(widget.year, widget.month);
+      selectedWeek = weeks.isNotEmpty ? weeks.first : null;
+    }); 
+
+    // Chờ cả 2 API gọi xong
+    Future.wait([
+      fetchTrend(),
+      fetchAllEntriesForMonth(),
+    ]).then((_) {
       _updateWeeklyData();
+
+      setState(() {
+        isLoading = false;
+      });
     });
   }
-
   // Cập nhật dữ liệu khi chọn tuần mới
   void _updateWeeklyData() {
-    if (selectedWeek == null) return;
+    if (selectedWeek == null) {
+      setState(() {
+        selectedWeekMoods = {};
+        selectedWeekAllEntries = [];
+        totalDaysRecordedInWeek = 0;
+        negToPosCount = 0;
+        posToNegCount = 0;
+      });
+      return;
+    }
 
     selectedWeekMoods = {};
-    int recordedCount = 0;
+    selectedWeekAllEntries = [];
     
-    // Lọc dữ liệu chỉ lấy những ngày trong tuần được chọn
-    for (int day in selectedWeek!.days) {
-      final dayKey = day.toString();
+    for (DateTime date in selectedWeek!.dates) {
+      final dayKey = date.day.toString();
       if (currentMonthTrendData.containsKey(dayKey)) {
         selectedWeekMoods[dayKey] = currentMonthTrendData[dayKey];
-        recordedCount++;
       }
     }
     
-    totalDaysRecordedInWeek = recordedCount;
-    analyzeTransitions(); // Phân tích chuyển đổi theo tuần
+    for (final entry in allMonthMoodEntries) {
+        final dateRaw = entry['date'];
+        if (dateRaw is String) {
+            try {
+                final entryDateTime = DateTime.parse(dateRaw); 
+                final entryDateOnlyLocal = DateTime(
+                    entryDateTime.toLocal().year, 
+                    entryDateTime.toLocal().month, 
+                    entryDateTime.toLocal().day
+                );
+                final isCurrentWeekMatch = selectedWeek!.dates.any((weekDate) =>
+                  weekDate.isAtSameMomentAs(entryDateOnlyLocal)
+                );
+                if (isCurrentWeekMatch) {
+                    selectedWeekAllEntries.add(entry);
+                }
+            } catch (e) {
+                debugPrint('Error parsing date $dateRaw for entry: $e');
+            }
+        }
+    }
 
-    // setState được gọi trong fetchTrend (hoặc cuối hàm này nếu cần cập nhật giao diện ngay)
-    setState(() {}); 
+    totalDaysRecordedInWeek = selectedWeekAllEntries.length;
+    analyzeTransitions(); // Phân tích chuyển đổi theo tuần
+    setState(() {
+      debugPrint('DEBUG: selectedWeekAllEntries count AFTER FIX: ${selectedWeekAllEntries.length}');
+      debugPrint('DEBUG: selectedWeekMoods count: ${selectedWeekMoods.length}');
+    });
   }
 
-  // Hàm lấy dữ liệu cho một tháng
-  Future<Map<String, dynamic>> _fetchTrendForMonth(int year, int month) async {
+  Future<void> fetchTrend() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(Constants.tokenKey);
+      final url = "${Constants.baseUrl}/mood-daily-trend/${widget.year}/${widget.month}";
 
       final res = await http.get(
-        Uri.parse("${Constants.baseUrl}/mood-daily-trend/$year/$month"),
+        Uri.parse(url),
+          headers: {
+           "Authorization": "Bearer $token",
+           "Accept": "application/json",
+          },
+        );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data is Map<String, dynamic> && data.isNotEmpty) {
+          currentMonthTrendData = data;
+          return;
+        }
+      }
+      currentMonthTrendData = {};
+    } catch (e) {
+      debugPrint("Error fetching trend for ${widget.month}/${widget.year}: $e");
+      currentMonthTrendData = {};
+    }
+  }
+
+  // HÀM ĐÃ SỬA: Lấy dữ liệu cho cả tháng (dùng startDate/endDate của tháng)
+  Future<void> fetchAllEntriesForMonth() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(Constants.tokenKey);
+      
+      // Tính toán ngày đầu và ngày cuối của tháng
+      final startDate = DateTime(widget.year, widget.month, 1);
+      final endDate = DateTime(widget.year, widget.month + 1, 0);
+      
+      final startDateStr = formatDateForApi(startDate); 
+      final endDateStr = formatDateForApi(endDate);
+      final url = "${Constants.baseUrl}/mood-all-entries/$startDateStr/$endDateStr";
+
+      final res = await http.get(
+        Uri.parse(url),
         headers: {
           "Authorization": "Bearer $token",
           "Accept": "application/json",
@@ -92,24 +198,16 @@ class _ThongKeUserStatChartState extends State<ThongKeUserStatChart> {
       );
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        if (data is Map<String, dynamic> && data.isNotEmpty) {
-          return data;
+        if (data is List) {
+          allMonthMoodEntries = data.cast<Map<String, dynamic>>();
+          return;
         }
       }
-      return {};
+      allMonthMoodEntries = [];
     } catch (e) {
-      debugPrint("Error fetching trend for $month/$year: $e");
-      return {};
+      debugPrint("Error fetching all entries for ${widget.month}/${widget.year}: $e");
+      allMonthMoodEntries = [];
     }
-  }
-
-  // Hàm lấy dữ liệu tháng
-  Future<void> fetchTrend() async {
-    setState(() => isLoading = true);
-    currentMonthTrendData = await _fetchTrendForMonth(widget.year, widget.month);
-    setState(() {
-      isLoading = false;
-    });
   }
   
   // -------------------- LOGIC PHÂN TÍCH CẢM XÚC --------------------
@@ -220,8 +318,8 @@ Map<int, Map<String, dynamic>> _buildAllWeekMoods() {
 
   for (final week in weeks) {
     final Map<String, dynamic> moods = {};
-    for (int day in week.days) {
-      final dayKey = day.toString();
+    for (DateTime date in week.dates) {
+      final dayKey = date.day.toString();
       if (currentMonthTrendData.containsKey(dayKey)) {
         moods[dayKey] = currentMonthTrendData[dayKey];
       }
@@ -235,26 +333,35 @@ Map<int, Map<String, dynamic>> _buildAllWeekMoods() {
 // -------------------- HÀM BUILD --------------------
   @override
   Widget build(BuildContext context) {
+    final previousWeek = selectedWeek != null
+    ? weeks.firstWhereOrNull((w) => w.weekNumber == selectedWeek!.weekNumber - 1)
+    : null;
+
+    final List<Map<String, dynamic>> previousWeekEntries = 
+        previousWeek != null 
+            ? _filterEntriesByWeek(previousWeek) 
+            : [];
+
+    debugPrint('DEBUG: Previous Week Entries for Summary: ${previousWeekEntries.length}');
+    
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    
     final List<FlSpot> spots = [];
-    
     //lấy dữ liệu từ tuần đã chọn để vẽ biểu đồ
     if (selectedWeek != null) {
-      for (int day in selectedWeek!.days) {
+      for (DateTime date in selectedWeek!.dates) { 
+        final day = date.day; // Lấy số ngày từ DateTime
         final dayKey = day.toString();
         if (currentMonthTrendData.containsKey(dayKey)) {
           final emotion = currentMonthTrendData[dayKey];
           final y = getMoodValue(emotion);
-          spots.add(FlSpot(day.toDouble(), y));
+          spots.add(FlSpot(day.toDouble(), y)); // Sử dụng day
         }
       }
     }
     
-    // Nếu không có dữ liệu
-    if (currentMonthTrendData.isEmpty) {
+    if (currentMonthTrendData.isEmpty && allMonthMoodEntries.isEmpty) {
       return Container(
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(16),
@@ -348,8 +455,8 @@ Map<int, Map<String, dynamic>> _buildAllWeekMoods() {
               child: LineChart(
                 LineChartData(
                   // Giới hạn trục X theo ngày của tuần được chọn
-                  minX: selectedWeek?.days.first.toDouble() ?? 1, 
-                  maxX: selectedWeek?.days.last.toDouble() ?? daysInMonth.toDouble(),
+                  minX: selectedWeek?.dates.first.day.toDouble() ?? 1, 
+                  maxX: selectedWeek?.dates.last.day.toDouble() ?? daysInMonth.toDouble(),
                   minY: 1,
                   maxY: 5,
                   lineTouchData: LineTouchData(
@@ -423,7 +530,7 @@ Map<int, Map<String, dynamic>> _buildAllWeekMoods() {
                         interval: 1, 
                         getTitlesWidget: (value, meta) {
                           int day = value.toInt();
-                          if (selectedWeek != null && selectedWeek!.days.contains(day)) {
+                          if (selectedWeek != null && selectedWeek!.dates.any((d) => d.day == day)) {
                             return Padding(
                               padding: const EdgeInsets.only(top: 8.0),
                               child: Text(
@@ -520,13 +627,19 @@ Map<int, Map<String, dynamic>> _buildAllWeekMoods() {
         const SizedBox(height: 16),
         
         // BẢNG THỐNG KÊ TUẦN (MỚI)
-        if (selectedWeek != null)
+        if (selectedWeek != null) 
           ThongKeWeeklySummary(
+            key: ValueKey(selectedWeek),
             weeklyData: selectedWeek!,
-            weekMoods: selectedWeekMoods, 
+            weekMoods: selectedWeekMoods,
+            allWeeklyMoodEntries: selectedWeekAllEntries,
             allWeeks: weeks,
             allWeekMoods: _buildAllWeekMoods(),
             isPositiveMood: isPositiveMood,
+            negToPosCount: negToPosCount,
+            posToNegCount: posToNegCount,
+            // Dùng biến đã tính toán ở trên
+            allPreviousWeeklyMoodEntries: previousWeekEntries, 
           ),
       ],
     );
