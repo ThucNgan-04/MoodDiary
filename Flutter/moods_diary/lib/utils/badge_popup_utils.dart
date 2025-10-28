@@ -8,7 +8,6 @@ Future<void> showCelebrationPopup(BuildContext context, String badgeName, String
     barrierDismissible: false, //Ngăn người dùng chạm ra ngoài để đóng
     barrierColor: Colors.black54, 
     builder: (context) {
-      // Bỏ PopScope vì không cần xử lý isDisposed nữa.
       return Center(
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 40),

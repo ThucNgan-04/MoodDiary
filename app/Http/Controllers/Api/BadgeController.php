@@ -37,24 +37,18 @@ class BadgeController extends Controller
         if (!$user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
-
-        //Cấp huy hiệu mới (Nếu có)- Hàm trả về huy hiệu mới được cấp (hoặc null)
         $newBadge = $this->checkAllBadgeConditions($user);
-
         // Lấy ds hh cần bị thu hồi
         $revokedBadgeNames = $this->getRevokedBadgeNames($user);
         
         $userBadges = $user->badges()->get(); 
         
-        //Chuẩn bị danh sách huy hiệu cuối cùng 
         $finalBadges = $userBadges->filter(function($badge) use ($revokedBadgeNames) {
             // Chỉ giữ lại những huy hiệu KHÔNG bị thu hồi
             return !in_array($badge->badge_name, $revokedBadgeNames);
         })->values()->map(function($badge) {
-            // Map về cấu trúc JSON cần thiết
 
             $badgeInfo = collect(self::BADGES)->first(function ($info) use ($badge) {
-                // So sánh tên huy hiệu trong DB (badge->badge_name) với tên trong const BADGES (info['name'])
                 return $info['name'] === $badge->badge_name;
             });
             // Tạo URL mạng
@@ -241,7 +235,6 @@ class BadgeController extends Controller
                 break;
             }
         }
-        
         // Tích cực
         $positive = ['vui', 'hạnh phúc', 'tích cực', 'rất tích cực', 'đang yêu', 'happy'];
         $positiveCount = $moods->filter(fn($m) => in_array(strtolower($m->emotion ?? ''), $positive))->count();
@@ -260,7 +253,6 @@ class BadgeController extends Controller
             $ratio30 = $recent30->filter(fn($m) => in_array(strtolower($m->emotion ?? ''), $positive))->count() / $recent30->count();
             if ($ratio30 >= 0.8) $newBadge = $this->awardBadge($user, self::BADGES['TICH_CUC_KHO']);
         }
-
         //Vượt khó
         $badLevels = ['rất tệ', 'tồi tệ', 'buồn bã'];
         $history = $moods->pluck('emotion')->map(fn($e) => strtolower($e ?? ''));
@@ -269,11 +261,8 @@ class BadgeController extends Controller
         foreach ($history as $e) {
             if (in_array($e, $badLevels)) $badStreak++;
             else $badStreak = 0;
-            
-            // Nếu có ít nhất 5 ngày tệ liên tiếp
             if ($badStreak >= 5) $overcome = true; 
         }
-        // và sau đó có ít nhất 10 log tích cực (để chứng minh 'vượt khó')
         if ($overcome && $positiveCount >= 10)
             $newBadge = $this->awardBadge($user, self::BADGES['VUOT_KHO_5']);
         return $newBadge;
@@ -303,9 +292,7 @@ class BadgeController extends Controller
             return 0;
         }
 
-        // Bắt đầu từ ngày thứ hai (index 1)
         for ($i = 1; $i < count($dates); $i++) {
-            // Kiểm tra xem ngày hiện tại có liền kề ngày trước đó không
             if ($dates[$i - 1]->diffInDays($dates[$i]) == 1) {
                 $streak++;
             } else {
@@ -315,7 +302,7 @@ class BadgeController extends Controller
         return $streak;
     }
 
-    //Trao huy hiệu và sinh quote từ AI
+    //Trao huy hiệu & AI
     private function awardBadge($user, $badge)
     {
         $imagePath = $badge['image_path'] ?? 'default.png';
@@ -326,7 +313,7 @@ class BadgeController extends Controller
             ->where('badge_name', $badge['name'])
             ->first();
 
-        //Nếu huy hiệu đã tồn tại
+        //Nếu hh đã tồn tại
         if ($existingBadge) {
             if ($badge['type'] === 'permanent') {
                 return null; // Giữ nguyên ngày đạt được ban đầu
@@ -357,7 +344,6 @@ class BadgeController extends Controller
 
     private function generateAIQuote($badgeName, $description)
     {
-        // ... (Giữ nguyên logic gọi AI)
         $apiKey = config('services.gemini.api_key');
         $fallback = 'Một cột mốc cảm xúc đáng nhớ! 🌈';
 

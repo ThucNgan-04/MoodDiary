@@ -34,7 +34,6 @@ class _ThongKeUserStatChartState extends State<ThongKeUserStatChart> {
     // Nếu không có dữ liệu tháng, trả về danh sách rỗng
     if (allMonthMoodEntries.isEmpty) return []; 
     
-    // Dùng DateTime của Tuần (dates) để so sánh với ngày trong bản ghi (entry['date'])
     final weekStartDay = week.dates.first.day;
     final weekEndDay = week.dates.last.day;
 
@@ -139,7 +138,6 @@ class _ThongKeUserStatChartState extends State<ThongKeUserStatChart> {
             }
         }
     }
-
     totalDaysRecordedInWeek = selectedWeekAllEntries.length;
     analyzeTransitions(); // Phân tích chuyển đổi theo tuần
     setState(() {
@@ -175,7 +173,6 @@ class _ThongKeUserStatChartState extends State<ThongKeUserStatChart> {
     }
   }
 
-  // HÀM ĐÃ SỬA: Lấy dữ liệu cho cả tháng (dùng startDate/endDate của tháng)
   Future<void> fetchAllEntriesForMonth() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -210,7 +207,6 @@ class _ThongKeUserStatChartState extends State<ThongKeUserStatChart> {
     }
   }
   
-  // -------------------- LOGIC PHÂN TÍCH CẢM XÚC --------------------
   bool isPositiveMood(String emotion) {
     switch (emotion.toLowerCase()) {
       case "hạnh phúc":
@@ -264,9 +260,6 @@ class _ThongKeUserStatChartState extends State<ThongKeUserStatChart> {
       posToNegCount = pToN;
     });
   }
-
-
-// -------------------- HÀM HỖ TRỢ HIỂN THỊ (Giữ nguyên) --------------------
 
   Color getColor(String emotion) {
     switch (emotion.toLowerCase()) {
@@ -326,7 +319,6 @@ Map<int, Map<String, dynamic>> _buildAllWeekMoods() {
     }
     result[week.weekNumber] = moods;
   }
-
   return result;
 }
 
@@ -351,12 +343,12 @@ Map<int, Map<String, dynamic>> _buildAllWeekMoods() {
     //lấy dữ liệu từ tuần đã chọn để vẽ biểu đồ
     if (selectedWeek != null) {
       for (DateTime date in selectedWeek!.dates) { 
-        final day = date.day; // Lấy số ngày từ DateTime
+        final day = date.day; 
         final dayKey = day.toString();
         if (currentMonthTrendData.containsKey(dayKey)) {
           final emotion = currentMonthTrendData[dayKey];
           final y = getMoodValue(emotion);
-          spots.add(FlSpot(day.toDouble(), y)); // Sử dụng day
+          spots.add(FlSpot(day.toDouble(), y)); 
         }
       }
     }
@@ -414,7 +406,7 @@ Map<int, Map<String, dynamic>> _buildAllWeekMoods() {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.pink.shade50.withOpacity(0.7), // Màu nền nhẹ
+                color: Colors.pink.shade50.withOpacity(0.7), 
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.pink.shade300, width: 1),
               ),
@@ -437,7 +429,6 @@ Map<int, Map<String, dynamic>> _buildAllWeekMoods() {
                       value: week,
                       child: Center( 
                         child: AutoText(
-                          // Hiển thị thông tin tuần 
                           "Tuần ${week.weekNumber} (${week.dateRange})",
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                         ),
@@ -638,7 +629,6 @@ Map<int, Map<String, dynamic>> _buildAllWeekMoods() {
             isPositiveMood: isPositiveMood,
             negToPosCount: negToPosCount,
             posToNegCount: posToNegCount,
-            // Dùng biến đã tính toán ở trên
             allPreviousWeeklyMoodEntries: previousWeekEntries, 
           ),
       ],

@@ -36,55 +36,23 @@ class StatsController  extends Controller
         $start = Carbon::create($year, $month, 1)->startOfMonth();
         $end   = Carbon::create($year, $month, 1)->endOfMonth();
 
-        // Đếm số lần cảm xúc mỗi ngày
-        $data = Mood::where('user_id', $userId)
-            ->whereBetween('date', [$start, $end])
-            ->selectRaw('DAY(date) as day, emotion')
-            ->get()
-            ->groupBy('day')
-            ->map(function ($items) {
-                $emotionCount = $items->groupBy('emotion')->map->count();
-                $topEmotion = $emotionCount->sortDesc()->keys()->first();
-                return $topEmotion;
-            });
-
-        return response()->json($data);
-    }
-
-    //Lấy xu hướng cảm xúc theo tuần
-    public function weeklyTrend($startDate, $endDate)
-    {
-        $userId = Auth::id();
-        $start = Carbon::parse($startDate)->startOfDay();
-        $end   = Carbon::parse($endDate)->endOfDay();
-
-        // Lấy dữ liệu cảm xúc của 7 ngày
-        $data = Mood::where('user_id', $userId)
-            ->whereBetween('date', [$start, $end])
-            ->selectRaw('DATE(date) as full_date, DAY(date) as day, emotion')
-            ->get()
-            ->keyBy('full_date')
-            ->map(function ($item) {
-                return $item['emotion'];
-            });
-
-        // Sửa đổi để trả về map {ngày: emotion}
+        // Lấy cảm xúc phổ biến nhất (top emotion) cho từng ngày trong tháng
         $data = Mood::where('user_id', $userId)
             ->whereBetween('date', [$start, $end])
             ->selectRaw('DATE(date) as full_date, emotion')
             ->get()
-            ->groupBy('full_date')
+            ->groupBy('full_date') 
             ->map(function ($items) {
-                // Lấy emotion phổ biến nhất trong ngày đó
                 $emotionCount = $items->groupBy('emotion')->map->count();
                 $topEmotion = $emotionCount->sortDesc()->keys()->first();
-                // key là ngày trong tháng (day of month)
+                
                 return [
                     'day' => Carbon::parse($items->first()->full_date)->day,
                     'emotion' => $topEmotion,
                 ];
             })
-            ->pluck('emotion', 'day'); // Tạo map {day: emotion}
+            ->pluck('emotion', 'day'); // Tạo map {day_of_month: top_emotion}
+
 
         return response()->json($data);
     }
@@ -98,12 +66,10 @@ class StatsController  extends Controller
         // Lấy TẤT CẢ các bản ghi cảm xúc trong tuần, sắp xếp theo ngày
         $entries = Mood::where('user_id', $userId)
             ->whereBetween('date', [$start, $end])
-            // Chỉ cần lấy emotion và các trường cần thiết khác (nếu có)
             ->select('emotion', 'date') 
             ->orderBy('date', 'asc')
             ->get();
 
-        // Laravel sẽ tự động chuyển đổi Collection này thành JSON Array
         return response()->json($entries);
     }
 }

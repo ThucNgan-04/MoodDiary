@@ -174,7 +174,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              // GestureDetector(//   onTap: () {},//   child: AutoText(//     'Quên mật khẩu ?',//     style: TextStyle(//       color: colorScheme.primary,//       decoration: TextDecoration.underline,//     ),//   ), // ),// const SizedBox(height: 16),
               Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 4, // Khoảng cách giữa các phần tử trên cùng một dòng

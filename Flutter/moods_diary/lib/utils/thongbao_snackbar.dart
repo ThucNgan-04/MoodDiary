@@ -15,7 +15,6 @@ Future<void> showSnackBarAutoText(
     behavior: SnackBarBehavior.floating,
     content: Builder(
       builder: (context) {
-        // Dùng Builder để tạo context mới đúng với MaterialOverlay
         return AutoText(
           message,
           style: const TextStyle(color: Colors.white),

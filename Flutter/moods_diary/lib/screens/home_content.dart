@@ -199,9 +199,9 @@ class _HomeScreenState extends State<HomeContent> {
                           boxShadow: [
                             BoxShadow(
                               color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3), // Màu bóng
-                              spreadRadius: 1, // Độ lan rộng nhẹ
-                              blurRadius: 4, // Độ mờ
-                              offset: const Offset(0, 2), // Đổ bóng xuống dưới
+                              spreadRadius: 1, 
+                              blurRadius: 4, 
+                              offset: const Offset(0, 2), 
                             ),
                           ],
                         ),
@@ -214,7 +214,7 @@ class _HomeScreenState extends State<HomeContent> {
                           ),
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: Colors.white, // Nền trắng của TextField
+                            fillColor: Colors.white, 
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -279,10 +279,10 @@ class _HomeScreenState extends State<HomeContent> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: primaryColor.withOpacity(0.4), // Dùng màu chủ đạo để đổ bóng
+                              color: primaryColor.withOpacity(0.4), 
                               spreadRadius: 1,
                               blurRadius: 6,
-                              offset: const Offset(0, 3), // Đổ bóng xuống dưới
+                              offset: const Offset(0, 3), 
                             ),
                           ],
                         ),
@@ -310,10 +310,10 @@ class _HomeScreenState extends State<HomeContent> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: primaryColor.withOpacity(0.4), // Dùng màu chủ đạo để đổ bóng
+                              color: primaryColor.withOpacity(0.4), 
                               spreadRadius: 1,
                               blurRadius: 6,
-                              offset: const Offset(0, 3), // Đổ bóng xuống dưới
+                              offset: const Offset(0, 3), 
                             ),
                           ],
                         ),

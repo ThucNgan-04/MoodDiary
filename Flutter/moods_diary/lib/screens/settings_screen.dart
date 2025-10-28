@@ -51,15 +51,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center, // Căn giữa Row
-                        mainAxisSize: MainAxisSize.min, // Giới hạn kích thước Row theo nội dung
+                        mainAxisAlignment: MainAxisAlignment.center, 
+                        mainAxisSize: MainAxisSize.min, 
                         children: [
                           AutoText(
                             "CÀI ĐẶT",
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
                           ),
-                          const SizedBox(width: 5), // Khoảng cách giữa Icon và Text
+                          const SizedBox(width: 5), 
                           Icon(
                             Icons.settings, 
                             size: 30, 
@@ -77,8 +77,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white, // Background màu trắng
-                    borderRadius: BorderRadius.circular(8), // Bo góc
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8), 
                     boxShadow: [
                       BoxShadow(
                         color: selectedColor.withOpacity(0.2),

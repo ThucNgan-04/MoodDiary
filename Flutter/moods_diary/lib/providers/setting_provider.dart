@@ -32,7 +32,6 @@ class SettingProvider with ChangeNotifier {
     _loadSettingsOnStartup();
   }
 
-  // Phương thức mới để tải cài đặt khi khởi động ứng dụng
   Future<void> _loadSettingsOnStartup() async {
     final prefs = await SharedPreferences.getInstance();
     
@@ -45,7 +44,6 @@ class SettingProvider with ChangeNotifier {
       final serverSettings = await _authService.getSettings();
       if (serverSettings != null) {
         _settings = serverSettings;
-        // Tùy chọn: Lưu lại cài đặt server vào Local
         await _saveLocalSettings(); 
       }
     } else {
@@ -186,19 +184,16 @@ Future<void> loadLocalUserData() async {
     notifyListeners();
   }
 
-  // phương thức này để tải lại cài đặt từ server
   Future<void> loadRemoteSettings() async {
     final serverSettings = await _authService.getSettings();
     if (serverSettings != null) {
       _settings = serverSettings;
       notifyListeners();
-      // Tùy chọn: Lưu lại cài đặt từ server vào bộ nhớ cục bộ
       await _saveLocalAndRemoteSettings();
     }
   }
 
   double getScaledFontSize(double baseSize) {
-    // Độ lệch cỡ chữ cho mỗi bước (ví dụ: 4.0 điểm)
     const double sizeStep = 4.0; 
     return baseSize + (_fontSizeScale * sizeStep);
   }

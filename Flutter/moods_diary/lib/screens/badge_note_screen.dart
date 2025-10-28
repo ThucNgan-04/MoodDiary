@@ -17,7 +17,7 @@ class BadgeModel {
   });
 }
 
-//khớp với khai báo const BADGES trong Laravel
+//p/khớp với khai báo const BADGES trong Laravel
 final List<BadgeModel> allBadges = [
   BadgeModel(
     key: 'KIEN_TRI_3',
@@ -91,7 +91,6 @@ final List<BadgeModel> allBadges = [
   ),
 ];
 //screen hh
-
 class BadgeNoteScreen extends StatelessWidget {
   const BadgeNoteScreen({super.key});
 

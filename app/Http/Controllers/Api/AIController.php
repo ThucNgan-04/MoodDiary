@@ -153,9 +153,8 @@ class AIController extends Controller
     {
         $apiKey = config('services.gemini.api_key');
         
-        // 1. Lấy dữ liệu thống kê từ request (đầu vào mới)
-        $currStats = $request->input('curr_stats'); // Ví dụ: {'pos': 5, 'neg': 1, 'neu': 1}
-        $prevStats = $request->input('prev_stats'); // Ví dụ: {'pos': 3, 'neg': 3, 'neu': 1}
+        $currStats = $request->input('curr_stats');
+        $prevStats = $request->input('prev_stats');
         $currDateRange = $request->input('curr_date_range');
         $prevDateRange = $request->input('prev_date_range');
 
@@ -167,7 +166,6 @@ class AIController extends Controller
             return response()->json(['analysis' => 'Thiếu dữ liệu thống kê tuần để phân tích.'], 400);
         }
 
-        // 2. Tạo PROMPT MỚI cho Gemini (Phân tích tự do, không theo form quote)
         $currTotal = ($currStats['pos'] ?? 0) + ($currStats['neg'] ?? 0) + ($currStats['neu'] ?? 0);
         $prevTotal = ($prevStats['pos'] ?? 0) + ($prevStats['neg'] ?? 0) + ($prevStats['neu'] ?? 0);
         

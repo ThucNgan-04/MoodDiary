@@ -80,7 +80,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Form( //bọc trong Form
+          child: Form( 
             key: _formKey,
             child: Column(
               children: [
@@ -100,7 +100,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Shadow(offset: const Offset(-1.5, 0), color: Colors.white), 
                           // Viền phải
                           Shadow(offset: const Offset(1.5, 0), color: Colors.white),
-                          // Viền chéo (tùy chọn để làm viền dày hơn)
+                          // Viền chéo 
                           Shadow(offset: const Offset(1, 1), color: Colors.white),
                           Shadow(offset: const Offset(-1, -1), color: Colors.white),
                         ],

@@ -3,16 +3,13 @@ import 'package:moods_diary/widgets/auto_text.dart';
 
 class DieukhoanScreen extends StatelessWidget {
   final String title;
-  final String contentKey; // Dùng để xác định nội dung cần hiển thị
+  final String contentKey; //để xác định nội dung cần hiển thị
   
   const DieukhoanScreen({
     super.key,
     required this.title,
     required this.contentKey,
   });
-
-  // Đây là nơi bạn sẽ tải nội dung tương ứng với contentKey
-  // File: screens/content_detail_page.dart (hoặc nơi chứa hàm này)
 
 String _getContent(String key) {
   if (key == 'dieukhoan') {
@@ -79,13 +76,11 @@ String _getContent(String key) {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Dùng Text chuẩn vì đây là văn bản tĩnh, không cần AutoText phức tạp
             AutoText(
               detailContent,
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 50),
-            // Bạn có thể thêm các link hoặc button chấp nhận ở đây
           ],
         ),
       ),

@@ -3,9 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
-// Import hàm UI từ Utils
 import '../utils/badge_popup_utils.dart'; 
-
 // ignore: unused_import
 import 'package:provider/provider.dart';
 // ignore: unused_import

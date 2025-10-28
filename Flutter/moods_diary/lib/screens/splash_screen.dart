@@ -73,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   Shadow(offset: const Offset(-1.5, 0), color: Colors.white), 
                           // Viền phải
                   Shadow(offset: const Offset(1.5, 0), color: Colors.white),
-                          // Viền chéo (tùy chọn để làm viền dày hơn)
+                          // Viền chéo 
                   Shadow(offset: const Offset(1, 1), color: Colors.white),
                   Shadow(offset: const Offset(-1, -1), color: Colors.white),
                 ],

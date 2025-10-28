@@ -4,11 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
 import '../models/mood_model.dart';
-// Import các hàm UI từ file Utils mới
 import '../utils/badge_popup_utils.dart'; 
 
 class MoodService {
-  // Thêm BuildContext vào saveMood để hiển thị popup/snackbar
   Future<Map<String, dynamic>?> saveMood(BuildContext context, String moodType, String tag, String note, {String? date}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -47,7 +45,7 @@ class MoodService {
           final badgeName = newBadge['badge_name'] ?? 'Huy hiệu mới';
           final aiQuote = newBadge['ai_quote'] ?? 'Một thành tựu đáng nhớ!';
           final imageUrl = newBadge['image_url'] ?? '';
-          //Hiển thị Popup chúc mừng
+          //Popup chúc mừng
           showCelebrationPopup(context, badgeName, aiQuote, imageUrl);
         }
 

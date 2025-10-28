@@ -11,7 +11,7 @@ import '../models/mood_model.dart';
 
 // ignore: unused_import
 import '../utils/monthly_stat_cache.dart';
-import '../screens/thongke_user_screen.dart'; // ThongKeUserStatChart
+import '../screens/thongke_user_screen.dart';
 
 class ThongKeScreen extends StatefulWidget {
   const ThongKeScreen({super.key});
@@ -33,7 +33,6 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
   List<DateTime> months = [];
 
   String? aiSuggestion;
-
   // Khai báo Tabs
   final List<Tab> _tabs = [
     const Tab(text: 'CẢM XÚC THÁNG'),
@@ -77,12 +76,8 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
 
   Future<void> _fetchMoods({bool shouldCallAI = true}) async {
     setState(() => isLoading = true);
-
     final moods = await _moodService.getAllMoods();
-    final moodsThisMonth = moods.where((m) =>
-      m.createdAt.year == selectedMonth.year &&
-      m.createdAt.month == selectedMonth.month
-    ).toList();
+    final moodsThisMonth = moods.where((m) => m.createdAt.year == selectedMonth.year && m.createdAt.month == selectedMonth.month).toList();
     if (!mounted) return;
     if (moodsThisMonth.isEmpty) {
       setState(() {
@@ -93,13 +88,8 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
       });
       return;
     }
-
     final Map<String, int> counter = {};
-    for (var m in moodsThisMonth) {
-      final key = m.emotion.toString();
-      counter[key] = (counter[key] ?? 0) + 1;
-    }
-
+    for (var m in moodsThisMonth) {final key = m.emotion.toString();counter[key] = (counter[key] ?? 0) + 1;}
     final total = moodsThisMonth.length;
     final calculatedStats = counter.entries.map((e) {
       final percent = total > 0 ? (e.value / total) * 100 : 0.0;
@@ -110,15 +100,12 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
         _getColorForEmotion(e.key),
       );
     }).toList();
-
     // ignore: avoid_init_to_null
     String? suggestion = null;
-
     if (shouldCallAI) {
       final statsMap = calculatedStats.map((s) => {"emotion": s.label, "value": s.value}).toList();
       suggestion = await _moodService.analyzeStats(statsMap);
     } 
-
     setState(() {
       _moods = moodsThisMonth;
       stats = calculatedStats;
@@ -412,7 +399,6 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    // Đảm bảo TabController đã sẵn sàng trước khi build các widget phụ thuộc
     if (_tabController == null) {
       return const Center(child: CircularProgressIndicator()); 
     }
@@ -436,7 +422,6 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
 
               // Tab Bar
               TabBar(
-                // Sử dụng toán tử ! vì đã kiểm tra null ở trên
                 controller: _tabController!, 
                 tabs: _tabs,
                 labelColor: Colors.black,
@@ -445,12 +430,11 @@ class _ThongKeScreenState extends State<ThongKeScreen> with SingleTickerProvider
                 indicatorColor: selectedColor,
               ),
               
-              //Tab Bar View (Nội dung từng tab)
+              //Tab Bar View
               Expanded(
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : TabBarView(
-                        // Sử dụng toán tử ! vì đã kiểm tra null ở trên
                         controller: _tabController!, 
                         children: [
                           _buildEmotionStatTab(selectedColor),

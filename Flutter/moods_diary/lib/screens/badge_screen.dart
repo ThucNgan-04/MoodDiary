@@ -33,7 +33,6 @@ class _BadgeScreenState extends State<BadgeScreen> {
   }
 
   Future<void> _loadBadges() async {
-    // Logic trong provider sẽ tự động kiểm tra thu hồi và thông báo cho người dùng
     await _badgeProvider.loadBadges(context);
     
     // Xóa cờ thông báo sau khi người dùng vào màn hình này

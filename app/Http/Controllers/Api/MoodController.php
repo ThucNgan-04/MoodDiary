@@ -51,7 +51,6 @@ class MoodController extends Controller
             'date'    => $date,
         ]);
 
-        // 🔹 Chỉnh chỗ này: gọi AI bằng service container thay vì new
         $ai = app(\App\Http\Controllers\Api\AIController::class);
         $aiSuggestion = $ai->generateSuggestion(
             $request->emotion,
@@ -63,7 +62,7 @@ class MoodController extends Controller
         $badgeResponse = $badgeController->checkBadges($request);
         $badgeData = json_decode($badgeResponse->getContent(), true);
 
-        // 👇 Lấy huy hiệu mới nếu có
+        //Lấy huy hiệu mới nếu có
         $newBadge = $badgeData['new_badge'] ?? null;
 
         app(\App\Http\Controllers\Api\BadgeController::class)->checkBadges($request);

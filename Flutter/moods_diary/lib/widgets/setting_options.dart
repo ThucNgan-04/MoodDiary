@@ -43,7 +43,6 @@ class SettingOptions {
     );
   }
 
-  // Phương thức tĩnh để xây dựng bộ chọn màu
   static Widget buildColorSelector(BuildContext context) {
     return Consumer<SettingProvider>(
       builder: (context, provider, child) {

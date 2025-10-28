@@ -34,9 +34,7 @@ class BadgeProvider with ChangeNotifier {
     await prefs.setBool('has_new_badge', false);
     notifyListeners();
   }
-// ------------------------------------
-
-  // HÀM MỚI: XÓA HUY HIỆU TRÊN SERVER VÀ CẬP NHẬT LOCAL
+  //XÓA HUY HIỆU TRÊN SERVER VÀ CẬP NHẬT LOCAL
   Future<void> _deleteBadgeOnServer(String badgeName, BuildContext context) async {
     try {
       final success = await _badgeService.revokeBadge(badgeName, context);
@@ -45,25 +43,22 @@ class BadgeProvider with ChangeNotifier {
         _badges.removeWhere((badge) => badge['badge_name'] == badgeName);
         notifyListeners();
         if (kDebugMode) {
-          print("✅ Đã xóa huy hiệu thu hồi: $badgeName");
+          print("Đã xóa huy hiệu thu hồi: $badgeName");
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print("❌ Lỗi xóa huy hiệu '$badgeName' trên server: $e");
+        print("Lỗi xóa huy hiệu '$badgeName' trên server: $e");
       }
     }
   }
 
-  // HÀM MỚI: HIỂN THỊ THÔNG BÁO THU HỒI
   void _showRevokedBadgeAlert(BuildContext context, List<String> revokedNames) {
     if (revokedNames.isEmpty) return;
     
     final message = 'Bạn đã mất huy hiệu sau:\n${revokedNames.join(', ')}\n\n'
                     'Lý do: Không duy trì được điều kiện đạt huy hiệu. \n'
                     '(Hãy bấm i để xem chi tiết đạt huy hiệu)';
-                    
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -81,7 +76,7 @@ class BadgeProvider with ChangeNotifier {
               child: const Text('Đã hiểu', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.bold)),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                // GỌI API XÓA TỪNG HUY HIỆU SAU KHI CLICK OK
+                // API XÓA TỪNG HUY HIỆU SAU KHI CLICK OK
                 for (var name in revokedNames) {
                   _deleteBadgeOnServer(name, context);
                 }
@@ -101,7 +96,6 @@ class BadgeProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // Sử dụng hàm mới để kiểm tra và lấy huy hiệu
       final result = await _badgeService.checkAndGetBadges(context);
       
       _badges = result['badges'] ?? [];
@@ -115,14 +109,12 @@ class BadgeProvider with ChangeNotifier {
       }
       
       if (revokedNames.isNotEmpty) {
-        // Sử dụng Future.microtask để đảm bảo Dialog được gọi sau khi build
-        // và danh sách huy hiệu đã được cập nhật (_badges đã chứa huy hiệu chờ xóa)
         Future.microtask(() => _showRevokedBadgeAlert(context, revokedNames));
       }
 
     } catch (e) {
       if (kDebugMode) {
-        print("❌ Lỗi load/check huy hiệu: $e");
+        print("Lỗi load/check huy hiệu: $e");
       }
     } finally {
       _isLoading = false;
@@ -130,7 +122,6 @@ class BadgeProvider with ChangeNotifier {
     }
   }
 
-  // refreshBadges sẽ gọi lại loadBadges đã được cập nhật
   Future<void> refreshBadges(BuildContext context) async {
     await loadBadges(context);
   }

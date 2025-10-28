@@ -47,11 +47,10 @@ class _DiaryScreenState extends State<DiaryScreen> {
   String selectedTag = "Gia đình";
   final TextEditingController _noteController = TextEditingController();
   final MoodService _moodService = MoodService();
-  // --- AI Suggestion ---
   String? aiSuggestion;
   bool isLoading = false;
 
-    // Lưu nhật ký
+  // Lưu nhật ký
   Future<void> _saveDiaryEntry() async {
     if (selectedEmotionIndex == null || _noteController.text.isEmpty) {
       await showSnackBarAutoText(
@@ -61,19 +60,13 @@ class _DiaryScreenState extends State<DiaryScreen> {
       );
       return;
     }
-
     final emotion = emotions[selectedEmotionIndex!]["label"];
     final note = _noteController.text;
-
     setState(() => isLoading = true);
-
-    // format ngày (nếu có selectedDate thì dùng nó)
     final date = widget.selectedDate ?? DateTime.now();
     final formattedDate = DateFormat("yyyy-MM-dd HH:mm:ss").format(date);
-
-    // LỖI Ở ĐÂY: Hàm saveMood mới yêu cầu BuildContext là đối số đầu tiên
     final response = await _moodService.saveMood(
-      context, // Đã thêm BuildContext vào đây!
+      context,
       emotion!,
       selectedTag,
       note,
@@ -86,7 +79,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
         "Lưu nhật ký cho ngày $formattedDate thành công!",
       );
 
-      // final newBadge = response['new_badge']; // Logic huy hiệu đã được chuyển vào MoodService
       final aiSuggestionFromResponse = response['suggestion'];
       
       // Reset form nhập liệu
@@ -139,16 +131,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     fontStyle: FontStyle.italic,
                     color: Colors.black,
                     shadows: [
-                      // Viền trên
-                      Shadow(offset: const Offset(0, -1.5), color: Colors.white), 
-                      // Viền dưới
-                      Shadow(offset: const Offset(0, 1.5), color: Colors.white), 
-                      // Viền trái
-                      Shadow(offset: const Offset(-1.5, 0), color: Colors.white), 
-                      // Viền phải
-                      Shadow(offset: const Offset(1.5, 0), color: Colors.white),
-                      // Viền chéo -độ dày viền
-                      Shadow(offset: const Offset(2, 2), color: Colors.white),
+                      
+                      Shadow(offset: const Offset(0, -1.5), color: Colors.white), // Viền trên
+                      Shadow(offset: const Offset(0, 1.5), color: Colors.white), // Viền dưới
+                      Shadow(offset: const Offset(-1.5, 0), color: Colors.white), // Viền trái
+                      Shadow(offset: const Offset(1.5, 0), color: Colors.white),// Viền phải
+                      Shadow(offset: const Offset(2, 2), color: Colors.white),// Viền chéo -độ dày viền
                       Shadow(offset: const Offset(-2, -2), color: Colors.white),
                     ],
                   ),
@@ -210,7 +198,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 // TAG
                 Row(
                   children: [
@@ -235,7 +222,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-
+                    //TAG
                     Expanded(
                       child: Container(
                         height: 50,
@@ -265,7 +252,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-
                 // Viết nhật ký
                 TextField(
                   controller: _noteController,
@@ -283,7 +269,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
                 // Nút lưu
                 Center(
                   child: ElevatedButton(
@@ -304,7 +289,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 // Gợi ý AI
                 Center(
                   child: Column(
@@ -318,14 +302,10 @@ class _DiaryScreenState extends State<DiaryScreen> {
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                           shadows: [
-                            // Viền trên
-                            Shadow(offset: const Offset(0, -1.5), color: Colors.white), 
-                            // Viền dưới
-                            Shadow(offset: const Offset(0, 1.5), color: Colors.white), 
-                            // Viền trái
-                            Shadow(offset: const Offset(-1.5, 0), color: Colors.white), 
-                            // Viền phải
-                            Shadow(offset: const Offset(1.5, 0), color: Colors.white),
+                            Shadow(offset: const Offset(0, -1.5), color: Colors.white), // Viền trên
+                            Shadow(offset: const Offset(0, 1.5), color: Colors.white), // Viền dưới
+                            Shadow(offset: const Offset(-1.5, 0), color: Colors.white), // Viền trái
+                            Shadow(offset: const Offset(1.5, 0), color: Colors.white),// Viền phải
                             // Viền chéo (tùy chọn để làm viền dày hơn)
                             Shadow(offset: const Offset(2, 2), color: Colors.white),
                             Shadow(offset: const Offset(-2, -2), color: Colors.white),
