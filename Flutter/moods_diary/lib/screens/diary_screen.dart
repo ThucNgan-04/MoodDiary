@@ -257,7 +257,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   controller: _noteController,
                   maxLines: 6,
                   decoration: InputDecoration(
-                    hintText: "Viết cảm xúc hôm nay...",
+                    hintText: "Mooddiary... ",
                     hintStyle: TextStyle(color: selectedColor),
                     filled: true,
                     fillColor: Colors.white,

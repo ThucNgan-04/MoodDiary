@@ -111,29 +111,22 @@ class BadgeService {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(Constants.tokenKey);
       if (token == null) return [];
-
       final response = await http.get(
         Uri.parse('$baseUrl/badges/me'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
+        headers: {'Authorization': 'Bearer $token','Accept': 'application/json',},
       );
-
       debugPrint('📡 GET /badges/me => ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true && data['badges'] is List) {
           List<Map<String, dynamic>> badges =
               List<Map<String, dynamic>>.from(data['badges']);
-
           return badges.map((badge) {
             badge['ai_quote'] ??= 'Bạn đã đạt được thành tựu đáng nhớ! ✨';
             return badge;
           }).toList();
         }
       }
-
       debugPrint("Không có dữ liệu huy hiệu: ${response.body}");
       return [];
     } catch (e) {

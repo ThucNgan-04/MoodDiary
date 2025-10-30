@@ -307,7 +307,7 @@ class ThongKeWeeklySummary extends StatelessWidget {
     );
   }
 }
-
+//--------------HÀM HTHI PHÂN TÍCH AI----------------
 class ThongKeWeeklyAIAnalysis extends StatefulWidget {
   final Map<String, int> currStats; 
   final Map<String, int> prevStats;
@@ -338,17 +338,14 @@ class _ThongKeWeeklyAIAnalysisState extends State<ThongKeWeeklyAIAnalysis> {
       isLoading = true;
       aiAnalysis = "Mood Diary đang phân tích dữ liệu tuần này...";
     });
-    // Chuẩn bị payload
-    final payload = {
+    final payload = {// Chuẩn bị payload
       'curr_stats': widget.currStats, 
       'prev_stats': widget.prevStats,
       'curr_date_range': widget.currDateRange,
       'prev_date_range': widget.prevDateRange,
     };
-    // Lấy token
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();// Lấy token
     final token = prefs.getString(tokenKey);
-
     if (token == null) {
         setState(() {
             aiAnalysis = "Lỗi: Không tìm thấy Token người dùng.";
@@ -365,8 +362,7 @@ class _ThongKeWeeklyAIAnalysisState extends State<ThongKeWeeklyAIAnalysis> {
             },
             body: json.encode(payload),
         );
-        final data = json.decode(utf8.decode(response.bodyBytes));
-        
+        final data = json.decode(utf8.decode(response.bodyBytes));  
         if (response.statusCode == 429) {
              setState(() {
                  aiAnalysis = data['analysis'] ?? 'AI đang tạm nghỉ để nạp năng lượng 😅. Hãy thử lại sau ít phút nhé!';

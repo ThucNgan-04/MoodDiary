@@ -240,7 +240,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ],
                           ),
                         
-                          subtitle: Text(mood.note),
+                          subtitle: AutoText(mood.note),
 
                           trailing: IconButton(
                             icon: const Icon(Icons.remove_circle, color: Colors.red),

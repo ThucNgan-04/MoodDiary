@@ -2,12 +2,12 @@
 // Tệp này chứa các ĐỊa chỉ kết nối
 
 class Constants {
-  static const String baseUrl = 'http://192.168.1.216:8000/api';
+  static const String baseUrl = 'http://192.168.10.238:8000/api';
   // Đối với Android Emulator, dùng 10.0.2.2
   //điện thoại thật, dùng IP của máy tính
 
   //Base URL cho Public Assets/Storage (KHÔNG cần /api)
-  static const String baseStorageUrl = 'http://192.168.1.216:8000';
+  static const String baseStorageUrl = 'http://192.168.10.238:8000';
   static const String apiUrl = baseUrl;
   static const String loginEndpoint = '/login';
   static const String registerEndpoint = '/register';

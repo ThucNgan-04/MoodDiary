@@ -17,9 +17,20 @@ class AIController extends Controller
             return "Chưa cấu hình GEMINI_API_KEY trong .env";
         }
 
-        // Prompt tạo gợi ý
-        $prompt = "Tôi đang cảm thấy '$mood' về '$tag'. Ghi chú: '$note'. 
-        Hãy gợi ý một lời khuyên ngắn gọn, dễ hiểu, tích cực (1-2 câu). Là lời muốn gửi gắm của một người ấm áp!";
+        $prompt = "
+            **Vai trò:** Bạn là một người bạn ấm áp, chuyên đưa ra lời động viên và gợi ý tích cực.
+            **Dữ liệu Nhật ký:**
+            - Cảm xúc chính: '$mood'
+            - Chủ đề/Tag: '$tag'
+            - Ghi chú: '$note'
+
+            **Yêu cầu Đầu ra:**
+            1.  Dựa trên cảm xúc và ghi chú, hãy đưa ra một lời khuyên hoặc lời động viên ngắn gọn, dễ hiểu, và tích cực.
+            2.  Đảm bảo lời nhắn có tính cá nhân hóa (dùng các từ như 'bạn', 'chúng ta').
+            3.  **Giới hạn:** Tuyệt đối chỉ viết **3 câu** hoặc **tối đa 4 câu rất ngắn** (không quá 50 từ).
+            4.  **Giọng điệu:** Phải cực kỳ ấm áp, nhẹ nhàng, và chân thành.
+            5.  **Định dạng:** Chỉ trả về đoạn văn bản (lời khuyên), không có lời chào hay bất kỳ tiêu đề nào.
+        ";
 
         try {
             $response = Http::withHeaders([
@@ -95,12 +106,21 @@ class AIController extends Controller
         }
 
         // Tạo prompt cho Gemini
-        $prompt = "Bạn là chuyên gia phân tích tâm lý. 
-        Đây là thống kê cảm xúc trong tháng của người dùng: " . json_encode($stats, JSON_UNESCAPED_UNICODE) . ".
-        Hãy phân tích ngắn gọn (2-3 câu) về tình trạng cảm xúc của họ. 
-        Nếu buồn/giận dữ chiếm nhiều thì bạn tính đại khái Phân tích người dùng có nguy cơ bị trầm cảm/ stress không, hãy khuyên cách cải thiện để tránh tiêu cực/stress.
-        Nếu vui/hạnh phúc chiếm nhiều, hãy khuyến khích họ giữ vững tinh thần với giọng điệu cảm xúc này phấn chấn, vui vẻ dễ thương.
-        Viết giọng thân thiện, dễ hiểu, như một người bạn quan tâm.";
+        $prompt = "
+            Bạn là chuyên gia phân tích tâm lý.
+            Đây là thống kê cảm xúc trong tháng của người dùng: " . json_encode($stats, JSON_UNESCAPED_UNICODE) . ".
+
+            **QUAN TRỌNG:**
+            1.  Trước tiên, bạn phải tính toán và đưa ra **phần trăm** của các nhóm cảm xúc chủ đạo (Tích cực: Vui/Hạnh phúc/Đang yêu và Tiêu cực: Buồn/Giận dữ) trong tháng.
+            2.  Sau đó, hãy phân tích chuyên sâu về tình trạng cảm xúc của họ, bao gồm cả dữ liệu phần trăm đã tính.
+            3.  **Phản hồi Tương ứng:**
+                a.  Nếu nhóm Tiêu cực (Buồn/Giận) chiếm ưu thế: Nhận định nhẹ nhàng về nguy cơ stress/tiêu cực và khuyên 1 cách cải thiện cụ thể, tích cực.
+                b.  Nếu nhóm Tích cực (Vui/Hạnh phúc) chiếm ưu thế: Khuyến khích họ giữ vững tinh thần với giọng điệu phấn chấn, vui vẻ, dễ thương.
+            4.  **Giới hạn và Định dạng:**
+                -   Viết thành một đoạn văn liền mạch, **khoảng 5-6 câu**, **không vượt quá 100 từ**.
+                -   Giọng điệu phải thân thiện, dễ hiểu, như một người bạn quan tâm, **viết hết câu**.
+                -   Chỉ trả về đoạn phân tích, KHÔNG có lời chào, tiêu đề hay bất kỳ dấu ngoặc kép nào.
+        ";
 
         try {
             $response = Http::withHeaders([
@@ -170,14 +190,23 @@ class AIController extends Controller
         $prevTotal = ($prevStats['pos'] ?? 0) + ($prevStats['neg'] ?? 0) + ($prevStats['neu'] ?? 0);
         
         $prompt = "
-        Phân tích sự dịch chuyển cảm xúc giữa Tuần trước ({$prevDateRange}) và Tuần này ({$currDateRange}).
-        - Tuần A: Tích cực {$prevStats['pos']} ngày, Tiêu cực {$prevStats['neg']} ngày, Trung tính/Chưa ghi {$prevStats['neu']} ngày (Tổng {$prevTotal} ngày ghi).
-        - Tuần B: Tích cực {$currStats['pos']} ngày, Tiêu cực {$currStats['neg']} ngày, Trung tính/Chưa ghi {$currStats['neu']} ngày (Tổng {$currTotal} ngày ghi).
+            Bạn là chuyên gia tâm lý và phân tích dữ liệu cảm xúc.
 
-        Là một chuyên gia tâm lý, hãy đưa ra một đoạn nhận xét chuyên sâu (khoảng 3-4 câu, không quá 50 từ):
-        1. Nhận định xu hướng chung và sự dịch chuyển chính (Tích cực hay Tiêu cực đang chiếm ưu thế hơn và so với tuần trước).
-        2. Đưa ra một lời khuyên hoặc gợi ý hành động cụ thể và tích cực cho người dùng.
-        Tuyệt đối trả lời bằng tiếng Việt, không dùng dấu ngoặc kép. Chỉ trả về đoạn phân tích, không thêm lời chào, kết luận hay bất kỳ tiêu đề nào.
+            **Dữ liệu Phân tích Dịch chuyển Cảm xúc:**
+            - Tuần trước ({$prevDateRange}): Tích cực {$prevStats['pos']} ngày, Tiêu cực {$prevStats['neg']} ngày, Trung tính/Chưa ghi {$prevStats['neu']} ngày (Tổng {$prevTotal} ngày ghi).
+            - Tuần này ({$currDateRange}): Tích cực {$currStats['pos']} ngày, Tiêu cực {$currStats['neg']} ngày, Trung tính/Chưa ghi {$currStats['neu']} ngày (Tổng {$currTotal} ngày ghi).
+
+            **Yêu cầu Phân tích Chuyên sâu:**
+            Hãy phân tích sự dịch chuyển cảm xúc giữa hai tuần này và đưa ra một đoạn nhận xét chuyên sâu, sâu sắc (khoảng 5-6 câu, không quá 80 từ).
+            1.  **Nhận định Xu hướng Chính:** Phân tích rõ ràng xu hướng chủ đạo (Tích cực hay Tiêu cực) đang chiếm ưu thế, và mức độ dịch chuyển/thay đổi so với tuần trước.
+            2.  **Phân tích Nguyên nhân Tiềm ẩn:** Dựa trên sự thay đổi, nhận định ngắn gọn về nguyên nhân tiềm ẩn (ví dụ: đang cố gắng cải thiện, hay đang gặp áp lực).
+            3.  **Khuyến nghị Chuyên môn:** Đưa ra một lời khuyên tâm lý chuyên nghiệp, thiết thực để duy trì hoặc cải thiện trạng thái cảm xúc.
+            4.  **Kỳ vọng Tuần tiếp theo:** Đưa ra kỳ vọng có điều kiện về trạng thái cảm xúc tuần tiếp theo nếu xu hướng hiện tại tiếp tục.
+
+            **Định dạng và Giọng điệu:**
+            -   Sử dụng giọng điệu chuyên nghiệp, sâu sắc nhưng vẫn ấm áp.
+            -   Tuyệt đối trả lời bằng tiếng Việt, viết thành một đoạn văn liền mạch, KHÔNG dùng dấu ngoặc kép.
+            -   Chỉ trả về đoạn phân tích. KHÔNG thêm lời chào, kết luận hay bất kỳ tiêu đề nào.
         ";
 
         try {

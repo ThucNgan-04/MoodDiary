@@ -113,13 +113,12 @@ class BadgeController extends Controller
     {
         $revokedNames = [];
         
-        // 1. Kiểm tra Thu hồi Streak
+        //Kiểm tra Thu hồi Streak
         $streakRevoked = $this->checkStreakRevocation($user);
         if (!empty($streakRevoked)) {
             $revokedNames = array_merge($revokedNames, $streakRevoked);
         }
 
-        // 2. Kiểm tra Thu hồi Tỷ lệ/Điều kiện khác
         $conditionRevoked = $this->checkConditionRevocation($user);
         if (!empty($conditionRevoked)) {
             $revokedNames = array_merge($revokedNames, $conditionRevoked);
@@ -128,10 +127,8 @@ class BadgeController extends Controller
         return array_unique($revokedNames);
     }
 
-    // Kiểm tra và lấy danh sách tên huy hiệu STREAK cần thu hồi
     private function checkStreakRevocation($user)
     {
-        // Tính toán Streak hiện tại
         $currentStreak = $this->getStreak($user); 
         $revokedNames = [];
 
@@ -148,9 +145,7 @@ class BadgeController extends Controller
             ->get();
             
         foreach ($userStreakBadges as $badge) {
-            // Lấy yêu cầu streak từ tên (ví dụ: 'Thử Thách 3 Ngày 🥉' -> 3)
             $requiredStreak = (int) filter_var($badge->badge_name, FILTER_SANITIZE_NUMBER_INT);
-            //Nếu người dùng có huy hiệu 7 ngày (requiredStreak = 7) và $currentStreak = 3, huy hiệu sẽ bị thu hồi. Nếu người dùng có huy hiệu 3 ngày (requiredStreak = 3) và $currentStreak = 3, huy hiệu sẽ được giữ lại.
             if ($currentStreak < $requiredStreak) {
                 $revokedNames[] = $badge->badge_name;
             }
@@ -159,7 +154,6 @@ class BadgeController extends Controller
         return $revokedNames;
     }
 
-    //Kiểm tra và lấy danh sách tên huy hiệu CONDITION cần thu hồi
     private function checkConditionRevocation($user)
     {
         $revokedNames = [];
@@ -197,7 +191,6 @@ class BadgeController extends Controller
         return $revokedNames;
     }
 
-    //Chỉ đánh dấu tên huy hiệu cần bị thu hồi nếu người dùng đang sở hữu
     private function markBadgeForRevocation($user, $badgeName, &$revokedNames)
     {
         $exists = Badge::where('user_id', $user->id)
@@ -239,15 +232,15 @@ class BadgeController extends Controller
         $positive = ['vui', 'hạnh phúc', 'tích cực', 'rất tích cực', 'đang yêu', 'happy'];
         $positiveCount = $moods->filter(fn($m) => in_array(strtolower($m->emotion ?? ''), $positive))->count();
         $ratio = $totalLogs ? $positiveCount / $totalLogs : 0;
-        // TICH_CUC_CHINH (Trên 60% tổng thể)
+        // (Trên 60% tổng thể)
         if ($ratio >= 0.6) $newBadge = $this->awardBadge($user, self::BADGES['TICH_CUC_CHINH']);
-        // TICH_CUC_DE (7 ngày gần nhất)
+        // (7 ngày gần nhất)
         $recent7 = $moods->where('created_at', '>=', Carbon::now()->subDays(7));
         if ($recent7->count() >= 5) {
             $ratio7 = $recent7->filter(fn($m) => in_array(strtolower($m->emotion ?? ''), $positive))->count() / $recent7->count();
             if ($ratio7 >= 0.7) $newBadge = $this->awardBadge($user, self::BADGES['TICH_CUC_DE']);
         }
-        // TICH_CUC_KHO (30 ngày gần nhất)
+        // (30 ngày gần nhất)
         $recent30 = $moods->where('created_at', '>=', Carbon::now()->subDays(30));
         if ($recent30->count() >= 10) {
             $ratio30 = $recent30->filter(fn($m) => in_array(strtolower($m->emotion ?? ''), $positive))->count() / $recent30->count();
@@ -287,7 +280,6 @@ class BadgeController extends Controller
         $today = Carbon::now('Asia/Ho_Chi_Minh')->startOfDay();
         $yesterday = Carbon::yesterday('Asia/Ho_Chi_Minh')->startOfDay();
         
-        // Nếu log gần nhất không phải hôm nay và không phải hôm qua, streak là 0
         if (!$latestLogDate->equalTo($today) && !$latestLogDate->equalTo($yesterday)) {
             return 0;
         }
@@ -308,12 +300,10 @@ class BadgeController extends Controller
         $imagePath = $badge['image_path'] ?? 'default.png';
         $imageUrl = asset('images/badges/' . $imagePath);
 
-        //Tìm kiếm huy hiệu hiện có
-        $existingBadge = Badge::where('user_id', $user->id)
+        $existingBadge = Badge::where('user_id', $user->id)//Tìm kiếm huy hiệu hiện có
             ->where('badge_name', $badge['name'])
             ->first();
 
-        //Nếu hh đã tồn tại
         if ($existingBadge) {
             if ($badge['type'] === 'permanent') {
                 return null; // Giữ nguyên ngày đạt được ban đầu
@@ -322,13 +312,10 @@ class BadgeController extends Controller
             if (!Carbon::parse($existingBadge->earned_date)->isToday()) {
                 $existingBadge->update(['earned_date' => Carbon::now()]);
             }
-            
-            // Trả null vì KHÔNG phải huy hiệu mới
-            return null; 
+            return null; //trả null vì ko phải hh ms
         }
 
-        // Nếu huy hiệu CHƯA tồn tại, tiến hành cấp mới
-        $aiQuote = $this->generateAIQuote($badge['name'], $badge['description']);
+        $aiQuote = $this->generateAIQuote($badge['name'], $badge['description']);//cấp mới nếu chưa tồn tại hh
 
         $new = Badge::create([
             'user_id' => $user->id,
@@ -350,10 +337,20 @@ class BadgeController extends Controller
         if (!$apiKey) return $fallback;
 
         try {
-            $prompt = "Người dùng vừa đạt huy hiệu '{$badgeName}' với thành tích '{$description}'.
-            Viết một câu không quá dài truyền sự cảm hứng và tích cực, có thể dùng emotion hoặc câu thơ đoạn văn hay vào.
-            Mỗi lần hãy viết một cách diễn đạt khác một chút để tạo cảm giác tự nhiên. Không sử dụng dấu ngoặc kép.";
+            $prompt = "
+                **Vai trò:** Bạn là chuyên gia truyền cảm hứng, chuyên tạo ra lời chúc mừng độc đáo.
 
+                **Dữ liệu Huy hiệu:**
+                - Tên huy hiệu: '{$badgeName}'
+                - Thành tích: '{$description}'
+
+                **Yêu cầu Đầu ra:**
+                1.  Viết một lời chúc mừng ngắn gọn, truyền cảm hứng và cực kỳ tích cực, dựa trên '{$badgeName}' và '{$description}'.
+                2.  **Bắt buộc** phải sử dụng một trong các yếu tố sau để làm câu văn nổi bật hơn: **Biểu tượng cảm xúc (emoji)**, **cách nói ví von sâu sắc**, hoặc **một câu thơ/thành ngữ ngắn** liên quan đến thành tích.
+                3.  **Tính đa dạng:** Mỗi lần tạo ra câu nói, hãy thay đổi cách diễn đạt (cấu trúc câu, từ ngữ, kiểu emoji) để tránh lặp lại.
+                4.  **Giới hạn:** Tuyệt đối chỉ viết **MỘT CÂU** duy nhất (không quá 15 từ) để giữ sự sắc sảo và tác động.
+                5.  **Định dạng:** Không sử dụng dấu ngoặc kép. Chỉ trả về câu nói, không có lời chào hay bất kỳ văn bản giải thích nào khác.
+            ";
             $response = Http::withHeaders(['Content-Type' => 'application/json'])
                 ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
                     "contents" => [[
