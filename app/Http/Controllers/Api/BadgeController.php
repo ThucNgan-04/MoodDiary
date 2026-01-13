@@ -59,8 +59,8 @@ class BadgeController extends Controller
                  'badge_name' => $badge->badge_name,
                  'description' => $badge->description,
                  'ai_quote' => $badge->ai_quote,
-                 'earned_date' => $badge->earned_date,
                  'image_url' => $imageUrl,
+                 'earned_date' => $badge->earned_date,
              ];
         })->toArray();
         
@@ -322,8 +322,8 @@ class BadgeController extends Controller
             'badge_name' => $badge['name'],
             'description' => $badge['description'],
             'ai_quote' => $aiQuote,
-            'earned_date' => Carbon::now(),
             'image_url' => $imageUrl,
+            'earned_date' => Carbon::now(),
         ]);
 
         return $new->toArray();

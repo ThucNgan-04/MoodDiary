@@ -1,9 +1,14 @@
 // lib/screens/settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:moods_diary/screens/dieukhoan_screen.dart';
+
+import 'login_screen.dart';
+import '../services/auth_service.dart';
+import 'change_password_screen.dart';
 import 'package:moods_diary/utils/thongbao_snackbar.dart';
 import 'package:provider/provider.dart';
 import '../providers/setting_provider.dart';
+// ignore: unused_import
 import '../widgets/user_sayhello.dart';
 import '../widgets/auto_text.dart';
 import '../widgets/setting_options.dart';
@@ -16,6 +21,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final AuthService _authService = AuthService();
 
   Color _hexToColor(String hexColor) {
     if (hexColor.startsWith('#')) {
@@ -27,6 +33,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Color(int.parse(hexColor, radix: 16));
   }
 
+  Future<void> _logout() async {
+    await _authService.logout();
+    if (mounted) {
+      Provider.of<SettingProvider>(context, listen: false).clearUsername();
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<SettingProvider>(
@@ -35,43 +52,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final Color selectedColor = settings.colorTheme != null
             ? _hexToColor(settings.colorTheme!)
             : Theme.of(context).colorScheme.primary;
+        
+        final Color primaryColor = selectedColor;
+        
+        final bool isDarkMode = settings.theme == 'dark';
 
+        final Color backgroundColor = isDarkMode
+          ? selectedColor.withOpacity(0.2)
+          : Colors.white;
         return Scaffold(
-          // ignore: deprecated_member_use
-          backgroundColor: selectedColor.withOpacity(0.2),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const UserSayHello(),
-                const SizedBox(height: 15),
-
-                Center(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center, 
-                        mainAxisSize: MainAxisSize.min, 
-                        children: [
-                          AutoText(
-                            "CÀI ĐẶT",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-                          ),
-                          const SizedBox(width: 5), 
-                          Icon(
-                            Icons.settings, 
-                            size: 30, 
-                            color: Colors.grey,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                    ],
+                const SizedBox(height: 20),
+                Text(
+                  "Cài đặt ⚙️",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
                   ),
                 ),
-                
+                const SizedBox(height: 10),
                 // Gọi các phương thức tĩnh để hiển thị từng tùy chọn
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -124,6 +129,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // Nút đăng xuất
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.4), 
+                              spreadRadius: 1,
+                              blurRadius: 6,
+                              offset: const Offset(0, 3), 
+                            ),
+                          ],
+                        ),
+                        child:  SizedBox(
+                          height: 50,
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _logout,
+                            icon: const Icon(Icons.logout, color: Colors.white),
+                            label: const AutoText("Đăng xuất",
+                                style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      // Nút đổi mật khẩu
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.4), 
+                              spreadRadius: 1,
+                              blurRadius: 6,
+                              offset: const Offset(0, 3), 
+                            ),
+                          ],
+                        ),
+                        child:  SizedBox(
+                          height: 50,
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ChangePasswordScreen(),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const AutoText(
+                              "Đổi mật khẩu",
+                              style: TextStyle(color: Colors.white), ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
 
                 Container(
                   width: 650,

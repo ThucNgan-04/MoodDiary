@@ -1,12 +1,15 @@
 // File: lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:moods_diary/screens/settings_screen.dart';
 import 'package:provider/provider.dart'; 
-import 'settings_screen.dart';
+//import 'settings_screen.dart';
 import 'thongke_screen.dart';
 import 'diary_screen.dart';
 import 'calendar_screen.dart';
 import 'home_content.dart';
 import '../providers/setting_provider.dart'; 
+import 'package:moods_diary/screens/emotion_tree_screen.dart';
+import '../services/emotion_tree_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,11 +36,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final treeService = Provider.of<EmotionTreeService>(context, listen: false);
     final List<Widget> screens = [
       const HomeContent(),
-      const ThongKeScreen(),
+      EmotionTreeScreen(treeService: treeService),
       const DiaryScreen(),
       const CalendarScreen(),
+      //const ThongKeScreen(),
       const SettingsScreen(),
     ];
 
@@ -88,10 +93,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: Colors.white,
                 items: const [
                   BottomNavigationBarItem(icon: Icon(Icons.person), label: "Cá nhân"),
-                  BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: "Thống kê"),
+                  BottomNavigationBarItem(icon: Icon(Icons.yard), label: "Cây"),
                   BottomNavigationBarItem(icon: Icon(Icons.add_circle), label: "Nhật ký"),
                   BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Lịch"),
-                  BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Cài đặt"),
+                  BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: "Cài đặt"),
                 ],
               ),
             ),

@@ -15,8 +15,4 @@ class Mood extends Model
     {
         return $this->belongsTo(User::class);
     }
-    public function suggestion()
-    {
-        return $this->hasOne(Suggestion::class, 'mood_id');
-    }
 }

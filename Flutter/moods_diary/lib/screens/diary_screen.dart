@@ -123,15 +123,14 @@ class _DiaryScreenState extends State<DiaryScreen> {
               children: [
                 const UserSayHello(),
                 const SizedBox(height: 20),
-                AutoText(
+                Text(
                   "HÔM NAY BẠN THẾ NÀO?",
                   style: TextStyle(
                     fontSize: 25,
                     fontWeight: FontWeight.w600,
                     fontStyle: FontStyle.italic,
                     color: Colors.black,
-                    shadows: [
-                      
+                    shadows: [     
                       Shadow(offset: const Offset(0, -1.5), color: Colors.white), // Viền trên
                       Shadow(offset: const Offset(0, 1.5), color: Colors.white), // Viền dưới
                       Shadow(offset: const Offset(-1.5, 0), color: Colors.white), // Viền trái
@@ -142,62 +141,68 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Center(
-                  child: Container(
-                    width: 650,
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      // ignore: deprecated_member_use
-                      border: Border.all(color: selectedColor.withOpacity(0.5)), 
-                    ),
-                    child: AutoText(
-                      "Chọn cảm xúc ↓",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
-                        color: selectedColor,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
 
-                // Danh sách cảm xúc
-                SizedBox(
-                  height: 60,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: emotions.length,
-                    // ignore: unnecessary_underscores
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) => GestureDetector(
-                      onTap: () => setState(() => selectedEmotionIndex = index),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: selectedEmotionIndex == index
-                                ? Colors.pink
-                                : Colors.transparent,
-                            width: 3,
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    // ignore: deprecated_member_use
+                    border: Border.all(color: selectedColor.withOpacity(0.5)), 
+                  ),
+                  
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min, 
+                    crossAxisAlignment: CrossAxisAlignment.stretch, 
+                    children: [
+                      Text(
+                        "Chọn cảm xúc ↓",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                          color: selectedColor,
+                        ),
+                      ),
+                      const SizedBox(height: 10), 
+
+                      // 2. Danh sách cảm xúc
+                      SizedBox(
+                        height: 60,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: emotions.length,
+                          // ignore: unnecessary_underscores
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          padding: EdgeInsets.zero, 
+                          itemBuilder: (context, index) => GestureDetector(
+                            onTap: () => setState(() => selectedEmotionIndex = index),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: selectedEmotionIndex == index
+                                      ? Colors.pink
+                                      : Colors.transparent,
+                                  width: 3,
+                                ),
+                              ),
+                              padding: const EdgeInsets.all(4),
+                              child: Image.asset(
+                                emotions[index]["icon"]!,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
                           ),
                         ),
-                        padding: const EdgeInsets.all(4),
-                        child: Image.asset(
-                          emotions[index]["icon"]!,
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.contain,
-                        ),
                       ),
-                    ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 // TAG
                 Row(
                   children: [

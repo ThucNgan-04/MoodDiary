@@ -96,19 +96,5 @@ class MoodController extends Controller
         return response()->json(['message' => 'Xóa mood thành công']);
     }
 
-    /**
-     * Lấy gợi ý theo emotion 
-     */
-    public function getSuggestion($emotion)
-    {
-        $suggestion = Suggestion::where('mood_type', $emotion)
-            ->inRandomOrder()
-            ->first();
-
-        if (!$suggestion) {
-            return response()->json(['message' => 'Chưa có gợi ý cho mood này']);
-        }
-
-        return response()->json(['suggestion' => $suggestion->content]);
-    }
+    
 }

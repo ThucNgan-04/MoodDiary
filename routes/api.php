@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AIController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\StatsController;
+use App\Http\Controllers\Api\EmotionTreeController;
 
 // Auth API
 Route::post('/register', [AuthController::class, 'register']);
@@ -49,4 +50,14 @@ Route::middleware('auth:api')->group(function(){
     Route::post('/ai/analyze-stats', [AIController::class, 'analyzeStats']);
     Route::post('/ai/generate-badge-quote', [AIController::class, 'generateBadgeQuote']);
     Route::post('/ai/mood-shift-analysis', [AIController::class, 'analyzeWeeklyMoodShift']);
+
+    // Emotion Tree & Garden Routes
+    // Lấy trạng thái Cây Cảm Xúc cá nhân
+    Route::get('/tree/status', [EmotionTreeController::class, 'getTreeStatus']);
+    Route::post('/tree/plant', [EmotionTreeController::class, 'plantTree']);
+    Route::post('/tree/log', [EmotionTreeController::class, 'logDiary']); 
+    //(Vườn Cảm Xúc)
+    Route::get('/garden/friends', [EmotionTreeController::class, 'getFriendTrees']);
+    //Thực hiện hành động tương tác (Tưới cây,...)
+    Route::post('/garden/action', [EmotionTreeController::class, 'performAction']);
 });

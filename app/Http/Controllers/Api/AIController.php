@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class AIController extends Controller
 {
@@ -14,7 +15,10 @@ class AIController extends Controller
         $apiKey = config('services.gemini.api_key');
 
         if (!$apiKey) {
-            return "Chưa cấu hình GEMINI_API_KEY trong .env";
+            return response()->json([
+                'success' => false,
+                'suggestion' => "Lỗi cấu hình: Chưa cấu hình GEMINI_API_KEY trong .env"
+            ], 500);
         }
 
         $prompt = "
@@ -55,6 +59,7 @@ class AIController extends Controller
 
             if ($response->status() === 429) {
                 return response()->json([
+                    'success' => true,
                     'suggestion' => 'AI đang tạm nghỉ để nạp năng lượng 😅. Hãy thử lại sau ít phút nhé!'
                 ], 200);
             }
@@ -64,7 +69,10 @@ class AIController extends Controller
                     'status' => $response->status(),
                     'body'   => $response->body()
                 ]);
-                return "Không thể kết nối AI ngay lúc này. Hãy thử lại sau.";
+                return response()->json([
+                    'success' => false,
+                    'suggestion' => "Không thể kết nối AI ngay lúc này. Hãy thử lại sau. (Status: {$response->status()})"
+                ], 500);
             }
 
             $result = $response->json();
@@ -74,18 +82,27 @@ class AIController extends Controller
                 ?? null;
 
             if ($text && trim($text) !== '') {
-                return trim($text);
+                return response()->json([
+                    'success' => true, // Báo thành công cho Flutter
+                    'suggestion' => trim($text)
+                ], 200);
             }
 
             Log::warning('Gemini trả về rỗng', ['result' => $result]);
 
-            return "AI không trả lời được. Debug: " . json_encode($result, JSON_UNESCAPED_UNICODE);
+            return response()->json([
+                'success' => false,
+                'suggestion' => "AI không trả lời được. Vui lòng thử lại." // Không cần debug chi tiết ra cho người dùng
+            ], 200);
 
         } catch (\Exception $e) {
             Log::error('AI Exception', [
                 'message' => $e->getMessage()
             ]);
-            return "Lỗi khi gọi AI: " . $e->getMessage();
+            return response()->json([
+                'success' => false,
+                'suggestion' => "Lỗi khi gọi AI: " . $e->getMessage()
+            ], 500);
         }
     }
     public function analyzeStats(Request $request)
